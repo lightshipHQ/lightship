@@ -14,7 +14,7 @@ silo.
 
 [Documentation](https://lightship.mintlify.site) ·
 [Website](https://lightship.sh/) ·
-[Try the hosted demo](https://lightship-production.up.railway.app/) ·
+[Try the hosted demo](https://demo.lightship.sh/) ·
 [Contribute](CONTRIBUTING.md)
 
 ## Why LightShip
@@ -31,7 +31,7 @@ silo.
 
 ## Try the hosted demo
 
-Open the [hosted demo](https://lightship-production.up.railway.app/). Its sign-in page provides the
+Open the [hosted demo](https://demo.lightship.sh/). Its sign-in page provides the
 credentials for a disposable administrator account. The dataset contains 132 recorded synthetic
 support-agent conversations across two fictional retailers.
 

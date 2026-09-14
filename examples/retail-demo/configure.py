@@ -12,7 +12,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 
-BASE_URL = "https://lightship-production.up.railway.app"
+BASE_URL = "https://demo.lightship.sh"
 
 
 class Client:

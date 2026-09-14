@@ -2,7 +2,7 @@
 
 This directory contains the tools used to generate, load, configure, and verify the synthetic
 retail-support dataset served by the canonical
-[LightShip demo on Railway](https://lightship-production.up.railway.app/). It does not start a
+[LightShip demo on Railway](https://demo.lightship.sh/). It does not start a
 second demo environment.
 
 The demo uses two fictional retailers, one tool-calling support agent, and 12 controlled scenario
@@ -97,7 +97,7 @@ LIGHTSHIP_DEMO_ADMIN_PASSWORD=... \
 python3 examples/retail-demo/configure.py local/retail-demo/showcase-v1
 ```
 
-The script defaults to `https://lightship-production.up.railway.app`. Use `--base-url` only when the
+The script defaults to `https://demo.lightship.sh`. Use `--base-url` only when the
 canonical Railway domain changes. It binds the trace table, creates the preview roles, and verifies
 pagination, fixed time bounds, Cedar/Northstar isolation, indistinguishable denied/not-found trace
 details, and the recorded evidence chain.

@@ -12,7 +12,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://lightship-production.up.railway.app/mcp",
+      "url": "https://demo.lightship.sh/mcp",
       "headers": [
         {
           "name": "Authorization",
