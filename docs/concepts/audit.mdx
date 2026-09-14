@@ -1,0 +1,40 @@
+---
+title: "Audit Log"
+sidebarTitle: "Audit"
+description: "See which authentication, query, and configuration activity LightShip records."
+---
+
+LightShip records significant authentication, query, and configuration activity in Postgres. Only
+administrators can read the audit log. Writes are best-effort, so an audit failure is logged without
+failing the original request.
+
+## What is recorded
+
+The audit log captures three event categories:
+
+- **Authentication.** Successful sign-in, sign-out, and password changes.
+- **Queries.** Trace searches and trace reads through REST, MCP, or the web UI.
+- **Configuration.** Schema, optimization, role, user, attribute, and key changes.
+
+When an audited action uses an API key, the entry records that fact. Protocol-only MCP calls such as
+initialization, ping, and tool listing are not audit events.
+
+## Where to read it
+
+<CardGroup cols={2}>
+  <Card title="Audit UI" icon="chart-line" href="/use/web-ui">
+    Admins can open **Audit** from the left navigation and filter recent entries.
+  </Card>
+
+  <Card title="GET /audit" icon="code" href="/api-reference/audit">
+    The same events over REST, for exporting to a SIEM or long-term archive.
+  </Card>
+</CardGroup>
+
+## Retention
+
+LightShip prunes audit rows in-process using the `LIGHTSHIP_AUDIT_RETENTION_DAYS` setting. The default is `90` days; set a longer window if you must retain audit history for compliance. A malformed or non-positive value stops the container at boot.
+
+<Tip>
+  If you need audit history beyond your retention window, export from `GET /audit` on a regular schedule.
+</Tip>

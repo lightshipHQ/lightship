@@ -1,0 +1,109 @@
+---
+title: "Schema API"
+sidebarTitle: "Schema"
+description: "Admin REST endpoints for the LightShip access model: discover ClickHouse tables, export the model, bind the trace source, mark fields, and review DDL suggestions."
+---
+
+The schema endpoints let administrators inspect ClickHouse, bind a trace table, and mark the columns and map keys that filters and policies may reference. All endpoints require the `admin` role and use session cookies or `Authorization: Bearer lsk_...`.
+
+## POST /schema/discover
+
+Discover ClickHouse tables, columns, maps, and sampled map keys. LightShip ranks likely trace tables to speed up binding.
+
+For map-key sampling, provide `table`, `timestamp`, `maps`, and optional RFC 3339 `from` and `to`
+bounds. When bounds are omitted, the last 24 hours are sampled. The older `window` duration remains
+accepted for API compatibility.
+
+```bash
+curl -X POST http://localhost:8080/schema/discover \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## GET /schema
+
+Export the stored access model, including the current binding, marked fields, and user attributes.
+
+```bash
+curl http://localhost:8080/schema \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## PUT /schema/binding
+
+Set the trace table and confirm the five required structural columns.
+
+<ParamField body="table" type="string" required>
+  Fully qualified ClickHouse table name (must contain a `.`, for example `otel.otel_traces`).
+</ParamField>
+
+<ParamField body="trace_id" type="string" required>
+  Column containing the trace identifier.
+</ParamField>
+
+<ParamField body="timestamp" type="string" required>
+  Column containing the span timestamp.
+</ParamField>
+
+<ParamField body="span_id" type="string" required>
+  Column containing the span identifier.
+</ParamField>
+
+<ParamField body="parent_span_id" type="string" required>
+  Column containing the parent span identifier.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Column containing the span name.
+</ParamField>
+
+```bash
+curl -X PUT http://localhost:8080/schema/binding \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "table": "otel.otel_traces",
+    "trace_id": "TraceId",
+    "timestamp": "Timestamp",
+    "span_id": "SpanId",
+    "parent_span_id": "ParentSpanId",
+    "name": "SpanName"
+  }'
+```
+
+## PUT /schema/fields
+
+Replace the entire set of marked trace fields. Fields omitted from the request are removed. User
+attribute keys are registered automatically when they are added to a user.
+
+<ParamField body="fields" type="array" required>
+  Array of field descriptors with `map`, `name`, `filterable`, `policy`, and `logical_type`.
+</ParamField>
+
+```bash
+curl -X PUT http://localhost:8080/schema/fields \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fields": [
+      {"map": "SpanAttributes", "name": "gen_ai.agent.name", "filterable": true, "policy": true, "logical_type": "string"},
+      {"map": "SpanArrayAttributes", "name": "langfuse.trace.tags", "filterable": true, "policy": true, "logical_type": "string_array"}
+    ]
+  }'
+```
+
+<Warning>
+  Removing a field that a stored policy still references is rejected. Update or delete the affected role first.
+</Warning>
+
+## GET /schema/optimizations
+
+Report missing indexes and suggested DDL for the bound table.
+
+```bash
+curl http://localhost:8080/schema/optimizations \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<Note>
+  LightShip never applies DDL automatically. Review the suggestions and run them against ClickHouse yourself.
+</Note>

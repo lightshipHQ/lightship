@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a reproducible, non-security problem using synthetic data.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not post credentials or production traces. For suspected vulnerabilities, follow
+        SECURITY.md and use private reporting, not this form.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include the commit SHA for a source build.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, installation method, Postgres/ClickHouse versions, and client (REST/UI/MCP).
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Steps and synthetic fixture data. Remove secrets and private identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs or screenshots
+      description: Optional. Remove tokens, passwords, DSNs, and private payloads.

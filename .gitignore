@@ -1,0 +1,25 @@
+/lightship
+*.bak
+
+# Local test configuration. Real credentials — never committed.
+/local/
+.env
+.env.*
+!.env.example
+
+# Build output
+/lightship-bin
+/dist/
+/.lightship/
+__pycache__/
+*.pyc
+
+# Demo scripts, walkthrough artifacts, screenshots, and recordings are maintained locally.
+/DEMO_*.md
+/DEMO_*.html
+/demo-recordings/
+/docs/demo-2-assets/
+/TODO.md
+
+# Collector setup lives with the instrumented services, not with the proxy that reads their output.
+/otel/

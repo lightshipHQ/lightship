@@ -1,0 +1,104 @@
+---
+title: "Trace Filters"
+sidebarTitle: "Filters"
+description: "Build trace filter conditions in LightShip using structured operators. Learn the exact JSON form, valid operators per logical type, and how filters map to role policies."
+---
+
+LightShip trace filters are structured JSON sent in the request body of `POST /traces/query`. A filter contains an ANDed list of conditions. Bound columns appear alongside other table columns in **Setup → Fields**; enable **Searchable** on any field callers should be able to filter. `GET /filter/schema` reports the enabled fields and their compatible operators.
+
+This page covers the JSON wire format, the operator matrix by logical type, and the relationship between structured filters and the typed expressions used by role policies.
+
+## Filter body format
+
+A filter object contains a top-level `filter` key with a `conditions` array. Every condition includes
+`name` and `op`. Include `map` for map keys and omit it for table columns. The operator determines
+whether the condition accepts `value`, `values`, or neither.
+
+```json
+{
+  "filter": {
+    "conditions": [
+      {
+        "map": "SpanAttributes",
+        "name": "user.id",
+        "op": "eq",
+        "value": "alice"
+      },
+      {
+        "map": "SpanAttributes",
+        "name": "gen_ai.agent.name",
+        "op": "prefix",
+        "value": "booking-"
+      }
+    ]
+  }
+}
+```
+
+<ParamField body="map" type="string">
+  Map column containing the field, for example `SpanAttributes`. Omit for a table column.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  The key name inside the map, for example `user.id` or `gen_ai.agent.name`.
+</ParamField>
+
+<ParamField body="op" type="string" required>
+  The operator. Must be an operator compatible with the field's logical type.
+</ParamField>
+
+<ParamField body="value" type="string | number | boolean">
+  One comparison value. Used by `eq`, `ne`, `prefix`, `has`, `gt`, `gte`, `lt`, and `lte`.
+</ParamField>
+
+<ParamField body="values" type="array">
+  Multiple values. Used by `in`, `not_in`, `has_any`, `has_all`, and `between`. For `between`, pass exactly two numbers.
+</ParamField>
+
+`exists` and `not_exists` accept neither `value` nor `values`.
+
+## Operator matrix
+
+The backend implements typed expressions for every logical type. The structured operators in the table below are the JSON wire form of the same typed expressions role policies use, so their spelling remains stable for API and cursor compatibility.
+
+<Tip>
+  `GET /filter/schema` reports the exact set of operators available for each marked field.
+</Tip>
+
+| Data type | Filter operators (JSON) | Policy support (typed expressions) |
+| --- | --- | --- |
+| `string` | `eq`, `ne`, `in`, `not_in`, `prefix`, `exists`, `not_exists` | `==`, `!=`, scalar `in` a list |
+| `string_array` | `has`, `has_any`, `has_all` | Exact element membership, for example `"agent:pii" in Tags` |
+| `boolean` | `eq`, `ne` | `==`, `!=` |
+| `number` | `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `between` | Disabled |
+
+### String operators
+
+- `eq` and `ne` match exact string values.
+- `in` and `not_in` accept a list of string values.
+- `prefix` matches the beginning of a string value.
+- `exists` and `not_exists` test whether the key is present regardless of value.
+
+### String array operators
+
+- `has` checks for a single exact element.
+- `has_any` checks that at least one of the provided values is present.
+- `has_all` checks that all provided values are present.
+
+### Boolean operators
+
+- `eq` and `ne` compare against `true` or `false`.
+
+### Number operators
+
+- `eq`, `ne`, `gt`, `gte`, `lt`, `lte` compare numeric values.
+- `between` accepts a two-element range array `[min, max]`.
+
+<Info>
+  Number fields are filter-only; role policies deliberately reject them. This design choice keeps policy expressions simple and auditable.
+</Info>
+
+## Related topics
+
+- [Filter schema endpoint](/api-reference/traces/filter-schema) — discover which fields and operators the current caller may use.
+- [Policies and roles](/concepts/policies) — learn how typed expressions govern trace access.

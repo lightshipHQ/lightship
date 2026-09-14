@@ -1,0 +1,55 @@
+---
+title: "Limitations"
+sidebarTitle: "Limitations"
+description: "Review current LightShip limitations for authorization, authentication, schema handling, querying, and operational controls."
+---
+
+Use these constraints when evaluating or deploying LightShip.
+
+## Supported field types
+
+- String, string-array, boolean, and number fields can be used for filtering.
+- String, string-array, and boolean fields can be used in policies. Number policies are not supported.
+- Structured payloads (nested JSON objects) are returned as trace data but cannot be used as marked fields for filtering or policies.
+
+## Authentication
+
+- LightShip supports password-based sign-in and API-key authentication (`Authorization: Bearer lsk_...`).
+- External identity-provider integrations such as OIDC and SAML are not currently supported.
+
+## Authorization and payload handling
+
+- Authorization is trace-wide. If any span in a trace matches a role policy, the response includes
+  the complete trace, including unmatched spans and payloads.
+- LightShip does not currently redact or classify trace data.
+
+## Query and analysis capabilities
+
+- There is no free-text search across traces or spans.
+- There is no custom sorting API; trace lists are ordered newest first.
+- There is no aggregate query API (for example, counting spans or grouping by attribute).
+- The local MCP companion can export authorized traces for ad hoc analysis. It returns a file path
+  and counts rather than trace rows, but the exported JSONL still contains complete authorized
+  payloads. See [MCP clients](/use/mcp).
+- A complete trace is buffered before it is returned. An unusually large trace can exhaust service
+  memory.
+
+## Schema compatibility
+
+- Physical-to-logical field compatibility and schema drift are not fully enforced.
+- `lightship check` compiles the stored access model but does not validate it against the live
+  ClickHouse schema.
+
+## Query performance
+
+- Query speed depends on the indexes defined in your ClickHouse trace table.
+- LightShip Setup reports recommended DDL for missing indexes but never changes the source schema.
+  Review suggestions through the setup MCP tool `lightship_optimizations` or
+  `GET /schema/optimizations`.
+
+## Operational limits
+
+- Login and trace concurrency limits are per process, not per client or deployment.
+- Trace requests have a configurable deadline and maximum time window. LightShip does not provide
+  distributed rate limiting; apply it at the edge.
+- See [Deployment](/operate/deployment#multiple-replicas) for access-model behavior across replicas.

@@ -1,0 +1,69 @@
+---
+title: "LightShip MCP Connections"
+sidebarTitle: "MCP Connections"
+description: "Tool groups and configuration for the everyday LightShip MCP and administrator Setup connection."
+---
+
+LightShip exposes a hosted MCP endpoint for bounded trace investigation. An optional local
+companion adds workspace exports for larger analyses. Both use the caller's personal API key and
+the same server-side access policy.
+
+## Hosted MCP
+
+Connect an MCP client to the `/mcp` endpoint shown on the LightShip **Connect** page. For example:
+
+```bash
+export LIGHTSHIP_API_KEY='lsk_...'
+claude mcp add --transport http \
+  lightship https://your-lightship.example/mcp \
+  --header "Authorization: Bearer $LIGHTSHIP_API_KEY"
+```
+
+The hosted connection lets the authenticated user inspect filter capabilities, search traces,
+retrieve one authorized trace, and manage their own API keys.
+
+## Local companion
+
+Run `lightship mcp` over stdio when an investigation needs to write a larger authorized export
+directly into the agent's workspace:
+
+```bash
+export LIGHTSHIP_API_KEY='lsk_...'
+claude mcp add --transport stdio lightship \
+  --env LIGHTSHIP_URL=https://your-lightship.example \
+  --env LIGHTSHIP_API_KEY="$LIGHTSHIP_API_KEY" \
+  -- lightship mcp
+```
+
+The companion provides the hosted trace tools plus `lightship_export_traces`. It requires the
+`lightship` binary and these environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `LIGHTSHIP_URL` | LightShip origin, such as `https://lightship.example.com` |
+| `LIGHTSHIP_API_KEY` | Personal API key created in the web UI |
+| `LIGHTSHIP_EXPORT_DIR` | Optional export directory; defaults to `.lightship/exports` |
+
+See [MCP clients](/use/mcp) for installation and client-specific setup.
+
+## Setup MCP
+
+Setup is an optional second connection for administrators only:
+
+```text
+POST https://your-lightship.example/mcp/setup
+Authorization: Bearer lsk_...
+```
+
+This endpoint requires the `admin` role. Its tools connect trace data, define roles, manage users,
+and review source optimizations. It contains no trace-query tools.
+
+Setup accepts MCP `initialize`, `ping`, `tools/list`, and `tools/call`. Authenticate with an admin's
+personal API key.
+
+## Context limits
+
+`lightship_search_traces` defaults to 10 summaries and accepts at most 20. Hosted trace-tool results
+larger than 32 KiB return an error. Use the local companion's export tool for larger investigations.
+
+For the underlying row API used by exports, see [Query Traces](/api-reference/traces/query).

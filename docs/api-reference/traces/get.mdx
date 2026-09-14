@@ -1,0 +1,53 @@
+---
+title: "GET /traces/{id}"
+sidebarTitle: "Get Trace"
+description: "Fetch one authorized trace by its trace ID. LightShip applies role policies to the trace as a whole and fails closed if the caller is unauthorized."
+---
+
+`GET /traces/{id}` returns a single trace by its `trace_id`. LightShip evaluates the caller's roles against the trace as a whole: if any span satisfies at least one of their policies, every span of the trace is returned. Otherwise the endpoint fails closed with `404`.
+
+## Endpoint
+
+```text
+GET http://localhost:8080/traces/{id}
+```
+
+Authentication: session cookie or `Authorization: Bearer lsk_...`.
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  The `trace_id` of the trace to retrieve.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="columns" type="string">
+  Comma-separated columns to project from the bound trace table, for example
+  `columns=TraceId,SpanId,Timestamp`.
+</ParamField>
+
+## Response
+
+<ResponseField name="trace_id" type="string">
+  The requested trace identifier.
+</ResponseField>
+
+<ResponseField name="binding" type="object">
+  The trace-table binding used to produce this response, so clients can find structural columns without knowing the customer's schema.
+</ResponseField>
+
+<ResponseField name="spans" type="array">
+  Every span of the trace, in the projection LightShip returned.
+</ResponseField>
+
+## Example
+
+```bash
+curl http://localhost:8080/traces/abc123 \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<Warning>
+  If the trace is unauthorized or not found, the endpoint returns `404` with `{"error": "trace not found"}`. It does not reveal whether the trace exists.
+</Warning>

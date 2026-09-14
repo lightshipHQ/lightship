@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.env.*
+local
+otel
+lightship
+lightship-bin
+dist
+coverage*
+*.bak
+*.tar
+*.tar.gz
+.DS_Store

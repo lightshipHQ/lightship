@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.lightshipHQ/lightship",
+  "title": "LightShip",
+  "description": "Governed access to production AI-agent traces in an existing ClickHouse store.",
+  "version": "0.1.0-alpha.1",
+  "repository": {
+    "url": "https://github.com/lightshipHQ/lightship",
+    "source": "github"
+  },
+  "websiteUrl": "https://lightship.sh/",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://lightship-production.up.railway.app/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer API key created in LightShip",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

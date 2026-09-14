@@ -1,0 +1,109 @@
+---
+title: "Users API"
+sidebarTitle: "Users"
+description: "Admin REST endpoints for LightShip users. Create accounts with generated passwords, assign roles and attributes, rotate passwords, and delete users with sessions."
+---
+
+The users API is how administrators provision access to LightShip. Each user carries a username, an optional password hash, a role list, and an attribute map that policies can reference (for example `user.tenant_id`). All endpoints require the `admin` role.
+
+## POST /users
+
+Create a user. Omit `password_hash` to have LightShip generate a password, return it once in the response, and set `must_change_password: true` so the user must change it on first sign-in.
+
+<ParamField body="username" type="string" required>
+  Unique username.
+</ParamField>
+
+<ParamField body="password_hash" type="string">
+  Argon2id hash produced by `lightship hash`. Omit to have LightShip generate a password.
+</ParamField>
+
+<ParamField body="roles" type="array of strings">
+  Role names the user holds.
+</ParamField>
+
+<ParamField body="attributes" type="object">
+  Attribute values referenced by policies, for example `{"tenant_id": "acme"}`.
+</ParamField>
+
+<ParamField body="must_change_password" type="boolean">
+  Set to `false` only for non-interactive service accounts.
+</ParamField>
+
+```bash
+curl -X POST http://localhost:8080/users \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alice",
+    "roles": ["booking-analyst"],
+    "attributes": {"tenant_id": "acme", "user_id": "alice"}
+  }'
+```
+
+<Warning>
+  When a password is generated, it is returned in the response exactly once. Deliver it to the user through a secure channel; LightShip never displays it again.
+</Warning>
+
+## GET /users
+
+List every user.
+
+```bash
+curl http://localhost:8080/users \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## GET /users/{username}
+
+Return one user, including roles and attributes.
+
+```bash
+curl http://localhost:8080/users/alice \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## PATCH /users/{username}
+
+Change roles or replace the password hash.
+
+<ParamField body="roles" type="array of strings">
+  Replaces the user's role list.
+</ParamField>
+
+<ParamField body="password_hash" type="string">
+  Argon2id hash generated with `lightship hash`.
+</ParamField>
+
+```bash
+curl -X PATCH http://localhost:8080/users/alice \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"roles": ["booking-analyst", "restricted-reviewer"]}'
+```
+
+## PATCH /users/{username}/attributes
+
+Set or remove attribute values. Pass `null` for a key to remove that attribute.
+
+```bash
+curl -X PATCH http://localhost:8080/users/alice/attributes \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"tenant_id": "acme", "old_flag": null}'
+```
+
+## DELETE /users/{username}
+
+Delete a user along with their sessions and API keys. Existing tokens stop working immediately.
+
+```bash
+curl -X DELETE http://localhost:8080/users/alice \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## Related
+
+- [Create and manage users](/configure/users)
+- [Roles API](/api-reference/access/roles)
+- [Policies](/concepts/policies)

@@ -1,0 +1,127 @@
+{
+  "theme": "palm",
+  "name": "LightShip",
+  "colors": {
+    "primary": "#0F766E",
+    "light": "#5EEAD4",
+    "dark": "#0F766E"
+  },
+  "redirects": [
+    {
+      "source": "/docs",
+      "destination": "/"
+    },
+    {
+      "source": "/docs/:slug*",
+      "destination": "/:slug*"
+    },
+    {
+      "source": "/use/rest-download",
+      "destination": "/api-reference/traces/query"
+    }
+  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "index",
+              "quickstart",
+              "get-started/install",
+              "get-started/authentication",
+              "concepts/architecture"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/access-model",
+              "concepts/policies",
+              "concepts/audit"
+            ]
+          },
+          {
+            "group": "Configure",
+            "pages": [
+              "configure/discover-trace-source",
+              "configure/roles-and-policies",
+              "configure/users"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/tenant-scoped-trace-access"
+            ]
+          },
+          {
+            "group": "Use LightShip",
+            "pages": [
+              "use/web-ui",
+              "use/mcp"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "operate/configuration",
+              "operate/admin-recovery",
+              "operate/deployment",
+              "operate/cli",
+              "operate/limitations"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/filters",
+              "api-reference/errors"
+            ]
+          },
+          {
+            "group": "Identity",
+            "pages": [
+              "api-reference/identity/login",
+              "api-reference/identity/logout",
+              "api-reference/identity/me",
+              "api-reference/identity/change-password",
+              "api-reference/identity/keys"
+            ]
+          },
+          {
+            "group": "Traces",
+            "pages": [
+              "api-reference/traces/query",
+              "api-reference/traces/get",
+              "api-reference/traces/filter-schema"
+            ]
+          },
+          {
+            "group": "Access Model",
+            "pages": [
+              "api-reference/access/schema",
+              "api-reference/access/roles",
+              "api-reference/access/users"
+            ]
+          },
+          {
+            "group": "Observability & MCP",
+            "pages": [
+              "api-reference/audit",
+              "api-reference/mcp"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

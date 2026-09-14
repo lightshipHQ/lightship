@@ -1,0 +1,105 @@
+---
+title: "POST /traces/query"
+sidebarTitle: "Query Traces"
+description: "Query authorized OpenTelemetry trace spans in LightShip with a time range, structured filter, limit, and cursor. Streams JSON and supports cursor-based pagination."
+---
+
+`POST /traces/query` streams the spans of every authorized trace matched by a structured filter within a time window. LightShip applies role policies at the trace level: if any span in a trace satisfies a policy, that trace's spans are returned in full. Follow the `next_cursor` in each response to paginate.
+
+## Endpoint
+
+```text
+POST http://localhost:8080/traces/query
+```
+
+Authentication: session cookie or `Authorization: Bearer lsk_...`.
+
+## Request body
+
+<ParamField body="from" type="string (RFC3339)">
+  Start of the time range. Optional. Defaults to 24 hours before `to`.
+</ParamField>
+
+<ParamField body="to" type="string (RFC3339)">
+  End of the time range. Optional. Defaults to now.
+</ParamField>
+
+<ParamField body="filter" type="object">
+  Structured filter object. See [Filters](/api-reference/filters) for shape and operators. Omit or send an empty `conditions` array to match everything the caller is authorized to see.
+</ParamField>
+
+<ParamField body="limit" type="integer">
+  Maximum traces per page. Defaults to `50` and is capped at `200`. A page may contain more than
+  200 spans because each selected trace is returned whole.
+</ParamField>
+
+<ParamField body="cursor" type="string">
+  Pagination cursor from a previous response. Omit on the first call. A cursor is bound to the filter that produced it; changing the filter and reusing an old cursor returns an error.
+</ParamField>
+
+<ParamField body="columns" type="array of strings">
+  Optional projection. When set, spans are returned with only these columns (plus the required structural columns). Omit to return every column from the bound table.
+</ParamField>
+
+### Example request
+
+```json
+{
+  "from": "2024-09-01T00:00:00Z",
+  "to": "2024-09-02T00:00:00Z",
+  "filter": {
+    "conditions": [
+      {"map": "SpanAttributes", "name": "user.id", "op": "eq", "value": "alice"},
+      {"map": "SpanAttributes", "name": "gen_ai.agent.name", "op": "prefix", "value": "booking-"}
+    ]
+  },
+  "limit": 200
+}
+```
+
+## Response
+
+<ResponseField name="binding" type="object">
+  The current schema binding, echoed so clients can identify which column holds the trace id, span id, timestamp, and parent span id without knowing the customer's table names ahead of time.
+</ResponseField>
+
+<ResponseField name="spans" type="array">
+  Span objects from every authorized trace in the page. Each span carries the columns from the bound table, subject to the optional `columns` projection.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor to pass in the next request. Omitted when there are no more pages.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "binding": {
+    "table": "otel.otel_traces",
+    "trace_id": "TraceId",
+    "timestamp": "Timestamp",
+    "span_id": "SpanId",
+    "parent_span_id": "ParentSpanId",
+    "name": "SpanName"
+  },
+  "spans": [
+    {"TraceId": "abc123", "SpanId": "s1", "ParentSpanId": "", "Timestamp": "2024-09-01T12:00:00Z", "SpanName": "checkout"}
+  ],
+  "next_cursor": "eyJuIjoxLCJp..."
+}
+```
+
+## Example
+
+```bash
+curl -X POST http://localhost:8080/traces/query \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d @query.json
+```
+
+<Tip>
+  Coding agents should use [LightShip MCP](/use/mcp) for bulk exports. Direct API clients can
+  continue requesting pages with `next_cursor` until the response omits it.
+</Tip>

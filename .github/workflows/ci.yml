@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Go and UI checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          check-latest: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check formatting
+        run: |
+          unformatted=$(git ls-files '*.go' | xargs gofmt -l)
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - run: node --experimental-vm-modules --test internal/httpapi/ui_admin_test.mjs internal/httpapi/ui_traces_test.mjs
+      - run: python3 -m unittest discover -s examples/retail-demo -p 'test_*.py'
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Verify dependency notice generation
+        run: |
+          notices=$(mktemp -d)
+          bash scripts/third-party-licenses.sh "$notices/third-party-licenses"
+
+  integration:
+    name: Postgres and ClickHouse integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lightship
+          POSTGRES_PASSWORD: lightship-test-only
+          POSTGRES_DB: lightship
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lightship -d lightship"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      clickhouse:
+        image: clickhouse/clickhouse-server:24.8
+        env:
+          CLICKHOUSE_DB: otel
+          CLICKHOUSE_USER: lightship
+          CLICKHOUSE_PASSWORD: lightship-test-only
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "clickhouse-client --user lightship --password lightship-test-only --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://lightship:lightship-test-only@localhost:5432/lightship?sslmode=disable
+      LIGHTSHIP_TEST_CLICKHOUSE: clickhouse://lightship:lightship-test-only@localhost:9000/otel
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          check-latest: true
+      - name: Run all tests against disposable databases
+        run: go test -race -count=1 -p 1 -timeout 15m ./...
+
+  container:
+    name: Container build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: docker build .
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          check-latest: true
+      - name: Scan tracked history without printing secret values
+        run: go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner --log-opts=--all
+
+  vulnerabilities:
+    name: Go vulnerability scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          check-latest: true
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...

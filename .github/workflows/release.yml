@@ -1,0 +1,115 @@
+name: Draft experimental release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Alpha tag, for example v0.1.0-alpha.1'
+        type: string
+        required: true
+      confirm:
+        description: 'I have completed the release checklist and want to create a tag and draft prerelease'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: draft-experimental-release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require default branch, alpha version, confirmation, and license
+        env:
+          VERSION: ${{ inputs.version }}
+          CONFIRM: ${{ inputs.confirm }}
+          RELEASE_REF: ${{ github.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          test "$CONFIRM" = true
+          test "$RELEASE_REF" = "refs/heads/$DEFAULT_BRANCH"
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]
+          test -s LICENSE
+
+  validation:
+    needs: preflight
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          check-latest: true
+      - name: Build archives and checksums
+        env:
+          VERSION: ${{ inputs.version }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          notices=$(mktemp -d)
+          bash scripts/third-party-licenses.sh "$notices/third-party-licenses"
+          for platform in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+            release_os="${platform%/*}"
+            release_arch="${platform#*/}"
+            archive="lightship_${VERSION}_${release_os}_${release_arch}"
+            stage=$(mktemp -d)
+            GOOS="$release_os" GOARCH="$release_arch" go build -trimpath -o "$stage/lightship" ./cmd/lightship
+            cp LICENSE README.md THIRD_PARTY.md SECURITY.md CHANGELOG.md "$stage/"
+            cp -R "$notices/third-party-licenses" "$stage/"
+            tar -czf "dist/$archive.tar.gz" -C "$stage" \
+              lightship LICENSE README.md THIRD_PARTY.md SECURITY.md CHANGELOG.md third-party-licenses
+          done
+          cd dist
+          sha256sum ./*.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  draft:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: dist
+      - name: Create draft prerelease at the validated commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          existing_tag=$(gh api "repos/$GH_REPO/git/matching-refs/tags/$VERSION" --jq '.[].ref')
+          if [ -n "$existing_tag" ]; then
+            echo 'Refusing to reuse an existing tag.'
+            exit 1
+          fi
+          gh release create "$VERSION" dist/* \
+            --target "$RELEASE_SHA" --draft --prerelease \
+            --title "LightShip $VERSION (experimental)" \
+            --notes "Experimental alpha built from $RELEASE_SHA. Not production-hardened. Review the release checklist and known limitations before publishing this draft."

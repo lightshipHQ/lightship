@@ -1,0 +1,39 @@
+---
+title: "Use the Web UI"
+sidebarTitle: "Web UI"
+description: "Use the LightShip web UI to browse traces, manage API keys, complete guided setup, and review audit logs."
+---
+
+The LightShip web UI is served from the same origin as its API (`http://localhost:8080` by
+default). It is the primary interface for trace exploration, self-service key management, and
+administration. The left navigation shows the areas available to your role.
+
+## Traces
+
+Traces is visible to every signed-in user. It lets you browse the traces that your role policies authorize you to see. Select a trace to inspect its spans and attributes. Access is enforced at the trace level: if any span matches your policies, the entire trace is returned.
+
+## Connect
+
+Connect is visible to every signed-in user. Its expandable sections keep API keys, MCP setup, and password management together without showing every control at once.
+
+- **Create a personal API key**: Enter a name, click **Create key**, and copy the `lsk_...` token immediately. LightShip shows the token only once at creation.
+- **Revoke a key**: Select a key from the list and click Revoke. The key stops working instantly.
+- **Change password**: Enter your current password, then the new one. The change takes effect immediately and revokes your other sessions, so you will need to sign in again on other devices.
+
+## Setup guide (admin only)
+
+Setup is restricted to admins and guides you through three sections in order:
+
+- **Connect data**: Choose the table that contains your traces and the fields users can search or use in access rules. See [Connect Trace Data](/configure/discover-trace-source).
+- **Define roles**: Review each role’s plain-language rule and generated config, then edit it inline or use **+ New role**.
+- **Manage users**: Create users and assign one or more roles.
+
+Admins can use **Preview as** in the top bar to evaluate the trace and Connect interfaces with a
+single role. The admin remains the audit actor, and previewed requests record the selected role.
+
+## Audit (admin only)
+
+Audit is restricted to admins. It shows the most recent authentication, trace-query,
+configuration, and user events first.
+
+For more details on what is captured and how to interpret the log, see [Audit Concepts](/concepts/audit).

@@ -1,0 +1,65 @@
+---
+title: "REST API"
+sidebarTitle: "Overview"
+description: "The LightShip REST API accepts JSON, uses session cookies for browsers and Bearer keys for automation, and applies role policies on every request."
+---
+
+The LightShip REST API is the machine-facing interface to trace query, access model, users, and audit. Browser requests use a session cookie obtained through `POST /login`; automation uses personal API keys of the form `lsk_...` in an `Authorization: Bearer` header. Roles and user attributes are resolved on every request, so a permission change takes effect without rotating credentials.
+
+## Base URL
+
+```text
+http://localhost:8080
+```
+
+Examples throughout the API reference use this local Docker Compose URL. For a hosted installation,
+replace it with your LightShip deployment URL, such as `https://your-lightship.example`. Terminate
+TLS in front of LightShip for production.
+
+## Authentication
+
+<CodeGroup>
+
+```bash Bearer key
+curl http://localhost:8080/me \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+```bash Session cookie
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"username": "alice", "password": "..."}'
+
+curl http://localhost:8080/me -b cookies.txt
+```
+
+</CodeGroup>
+
+## Request and response format
+
+All requests and responses use JSON. Send `Content-Type: application/json` on requests with a body. Errors are returned with a non-`2xx` status code and a JSON body describing the failure.
+
+<Info>
+  LightShip fails closed. Missing configuration, an unauthorized caller, or an unreachable trace source produces an error or an empty result set instead of leaking data.
+</Info>
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Query traces" icon="magnifying-glass" href="/api-reference/traces/query">
+    Fetch authorized traces with filters and cursor pagination.
+  </Card>
+
+  <Card title="Filter reference" icon="filter" href="/api-reference/filters">
+    See the operator matrix and JSON filter shape.
+  </Card>
+
+  <Card title="Access model" icon="layers" href="/api-reference/access/schema">
+    Discover ClickHouse schema and manage bindings and marked fields.
+  </Card>
+
+  <Card title="Audit log" icon="book" href="/api-reference/audit">
+    Read authentication, query, and configuration activity.
+  </Card>
+</CardGroup>

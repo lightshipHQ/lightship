@@ -1,0 +1,54 @@
+---
+title: "Authentication"
+sidebarTitle: "Authentication"
+description: "Sign in to LightShip with username and password for the web UI, or use personal API keys with Bearer tokens for MCP and REST automation."
+---
+
+LightShip supports two authentication mechanisms: browser session cookies for the web UI, and personal API keys for MCP clients and REST automation. Both resolve the caller's roles and attributes on every request, so revoking a role or attribute takes effect immediately without rotating credentials.
+
+The examples below use the local Docker Compose URL. Replace `http://localhost:8080` with your
+LightShip deployment URL when the service is hosted in your environment.
+
+## Session cookies
+
+Web UI users sign in with `POST /login`, which returns a session cookie the browser sends on every subsequent request.
+
+```bash
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"username": "alice", "password": "..."}'
+```
+
+While `must_change_password` is true for a user, only `GET /me`, `POST /me/password`, and `POST /logout` are available. Changing the password clears the flag and revokes the caller's other sessions.
+
+## Personal API keys
+
+Every user can create personal API keys of the form `lsk_...` from **Connect** in the web UI. Pass them in an `Authorization: Bearer` header.
+
+```bash
+curl http://localhost:8080/me \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<Warning>
+  The API key token is returned once, when the key is created. Save it now; LightShip cannot show it again.
+</Warning>
+
+API keys always act as their creator. Roles and user attributes are resolved on every request, so removing a role from a user immediately restricts every key that user created.
+
+## Bootstrap admin
+
+The bootstrap username is always `admin`. On first boot with an empty `LIGHTSHIP_ADMIN_PASSWORD_HASH`, LightShip generates a password and prints it once to the container log. To manage the credential yourself, set `LIGHTSHIP_ADMIN_PASSWORD_HASH` and restart. Changing that environment value rotates the credential; an unchanged value does not undo a later password change made in **Connect**. See [Admin Recovery](/operate/admin-recovery).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create an API key" icon="key" href="/api-reference/identity/keys">
+    Create, list, and revoke personal keys through the API.
+  </Card>
+
+  <Card title="Connect an MCP client" icon="plug" href="/use/mcp">
+    Add LightShip to Claude Code or another MCP client.
+  </Card>
+</CardGroup>

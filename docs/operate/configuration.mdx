@@ -1,0 +1,55 @@
+---
+title: "Configuration"
+sidebarTitle: "Configuration"
+description: "Configure LightShip with environment variables for ClickHouse, Postgres, caching, resource limits, and admin credentials."
+---
+
+LightShip reads all settings from environment variables at startup. You can set them in a `.env` file with Docker Compose or export them directly in your deployment environment.
+
+## Environment variables
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CLICKHOUSE_DSN` | required | Read-only connection to the trace database. Common DSN forms: `https://USER:PASSWORD@INSTANCE.clickhouse.cloud:8443/DATABASE?secure=true` and `clickhouse://HOST:9000/DATABASE`. |
+| `POSTGRES_PASSWORD` | `lightship` | Password used by the Postgres service in the Compose stack. |
+| `DATABASE_URL` | required outside Compose | Postgres connection string. Docker Compose constructs it from `POSTGRES_PASSWORD`. |
+| `LIGHTSHIP_ADMIN_PASSWORD_HASH` | generated on first boot | Bootstrap or recovery hash for `admin`. Changing it rotates the credential; an unchanged value does not overwrite a later UI password change. |
+| `LIGHTSHIP_ADDR` | `:8080` | HTTP listen address inside the container. The port mapping in `docker-compose.yml` publishes this to the host. |
+| `PORT` | unset | Hosting-provider port fallback used only when `LIGHTSHIP_ADDR` is unset. |
+| `LIGHTSHIP_MODEL_TTL` | `1m` | Maximum age of the access-model cache in each process. Must be a positive Go duration; a malformed value stops the service at boot. |
+| `LIGHTSHIP_AUDIT_RETENTION_DAYS` | `90` | Number of days to keep audit log entries. Positive integer; pruning runs in-process. |
+| `LIGHTSHIP_LOGIN_CONCURRENCY` | `4` | Maximum simultaneous password verifications per process. Saturated requests receive `429`. |
+| `LIGHTSHIP_QUERY_CONCURRENCY` | `8` | Shared maximum simultaneous REST and MCP trace requests per process. Saturated requests receive `429`. |
+| `LIGHTSHIP_QUERY_TIMEOUT` | `30s` | Deadline applied to REST and MCP trace requests. Must be a positive Go duration. |
+| `LIGHTSHIP_MAX_QUERY_WINDOW` | `744h` | Maximum requested trace time range (31 days). Must be a positive Go duration. |
+| `LIGHTSHIP_DEMO_MODE` | `false` | Explicitly enables the disposable public-demo runtime. Demo-specific settings are rejected unless this is `true`. |
+| `LIGHTSHIP_DEMO_USERNAME` | disabled | Username displayed on the sign-in screen of an intentionally public, disposable demo. Must be set with `LIGHTSHIP_DEMO_PASSWORD`. |
+| `LIGHTSHIP_DEMO_PASSWORD` | disabled | Plaintext password displayed for the demo account. It must match the account's stored password hash. |
+| `LIGHTSHIP_DEMO_DATASET_FROM` | disabled | Optional RFC3339 lower bound exposed as the fixed **Demo dataset** range. Must be set with `LIGHTSHIP_DEMO_DATASET_TO`. |
+| `LIGHTSHIP_DEMO_DATASET_TO` | disabled | Optional RFC3339 upper bound for the fixed demo range. Must be later than `LIGHTSHIP_DEMO_DATASET_FROM`. |
+
+### Hosted demo mode
+
+Demo mode deliberately publishes an ordinary account credential. The account retains its assigned
+roles, so displaying an administrator credential gives visitors administrative access. Demo API
+keys expire within 24 hours, and the displayed account cannot change its own password.
+
+Enable this mode only on a dedicated deployment backed by synthetic traces and disposable
+control-plane state. Public demos still require TLS and edge rate limits.
+
+<Warning>
+  Change `POSTGRES_PASSWORD` from the default before the first boot. Postgres bakes the password into its data volume during initialization. Changing it later requires resetting the volume or running `ALTER ROLE` inside Postgres manually.
+</Warning>
+
+## Validating configuration
+
+Run `lightship check` to compile the access model stored in Postgres and print its status. From a
+Docker Compose checkout, run:
+
+```sh
+docker compose run --rm control-plane check
+```
+
+The command does not start the server, apply migrations, validate the serving environment, or test
+ClickHouse connectivity and schema compatibility. A missing source binding is reported as a
+warning. See [CLI reference](/operate/cli#lightship-check) for details.

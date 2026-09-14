@@ -1,0 +1,124 @@
+---
+title: "Quickstart"
+sidebarTitle: "Quickstart"
+description: "Start LightShip against your existing ClickHouse, sign in as admin, bind the trace table, and run your first authorized query."
+---
+
+This quickstart runs LightShip with Docker Compose against a ClickHouse instance that already contains your OpenTelemetry traces, then walks through the first sign-in, table binding, and trace query.
+
+## Prerequisites
+
+- Docker and Docker Compose.
+- A local LightShip checkout. See [Install LightShip](/get-started/install). Run the commands in
+  **Start LightShip** from the checkout root.
+- Read-only credentials to the ClickHouse instance that holds your OTel traces. ClickHouse is not included in the Compose stack.
+- Common DSN forms:
+
+```text ClickHouse DSN
+https://USER:PASSWORD@INSTANCE.clickhouse.cloud:8443/DATABASE?secure=true
+clickhouse://HOST:9000/DATABASE
+```
+
+## Start LightShip
+
+<Steps>
+  <Step title="Configure the environment">
+    Copy the example environment file and set `CLICKHOUSE_DSN`. Every other variable has a working default for evaluation.
+
+    ```sh
+    cp .env.example .env
+    ```
+
+    Edit `.env` and set:
+
+    ```text .env
+    CLICKHOUSE_DSN=https://USER:PASSWORD@INSTANCE.clickhouse.cloud:8443/DATABASE?secure=true
+    ```
+  </Step>
+  <Step title="Bring up the stack">
+    ```sh
+    docker compose up -d
+    docker compose logs control-plane
+    ```
+
+    On first boot LightShip applies Postgres migrations and, if `LIGHTSHIP_ADMIN_PASSWORD_HASH` is empty, generates a bootstrap admin password and prints it to the log exactly once.
+  </Step>
+  <Step title="Sign in as admin">
+    Open [http://localhost:8080](http://localhost:8080) and sign in as `admin` with the password from the log. You are required to change it before accessing traces, the **Connect** page, MCP, or admin routes.
+  </Step>
+</Steps>
+
+<Warning>
+  The bootstrap password is printed to the container log **once**. Restarts do not reprint it. If you lose it, generate a replacement hash with `lightship hash` and set `LIGHTSHIP_ADMIN_PASSWORD_HASH` in `.env`. See [Admin recovery](/operate/admin-recovery).
+</Warning>
+
+## Connect your trace data
+
+<Steps>
+  <Step title="Discover tables">
+    Open **Setup → Connect data**. LightShip ranks likely trace tables and suggests the required
+    field mappings.
+  </Step>
+  <Step title="Confirm the required columns">
+    Choose the trace table and confirm the five required columns:
+
+    - `trace_id`
+    - `timestamp`
+    - `span_id`
+    - `parent_span_id`
+    - `name`
+  </Step>
+  <Step title="Mark policy and filter fields">
+    Choose whether each trace field is **Searchable**, available to **Access rules**, or both.
+    LightShip displays the field type discovered from the source; number fields are search-only.
+  </Step>
+</Steps>
+
+## Run your first query
+
+Create a personal API key from **Connect**, then call the traces query endpoint. Filters are an ANDed list of conditions.
+
+<CodeGroup>
+
+```sh curl
+curl -X POST http://localhost:8080/traces/query \
+  -H "Authorization: Bearer lsk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filter": {
+      "conditions": [
+        {"map": "SpanAttributes", "name": "user.id", "op": "eq", "value": "alice"}
+      ]
+    },
+    "limit": 100
+  }'
+```
+
+```sh List filterable fields
+curl http://localhost:8080/filter/schema \
+  -H "Authorization: Bearer lsk_..."
+```
+
+</CodeGroup>
+
+Only traces where at least one span satisfies both the caller's policies and the filter are returned. Use `next_cursor` to page through large result sets.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Define roles and policies" icon="lightbulb" href="/configure/roles-and-policies">
+    Express access rules over span attributes and user attributes.
+  </Card>
+
+  <Card title="Connect an MCP client" icon="chat" href="/use/mcp">
+    Investigate traces conversationally from Claude Code or Codex.
+  </Card>
+
+  <Card title="Offline analysis" icon="terminal" href="/use/mcp#context-safe-analysis">
+    Export authorized rows for `jq`, DuckDB, or scripts without filling the conversation.
+  </Card>
+
+  <Card title="API reference" icon="code" href="/api-reference/introduction">
+    Every REST endpoint, request shape, and error.
+  </Card>
+</CardGroup>

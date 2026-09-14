@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en" data-color-mode="light" data-light-theme="light">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LightShip</title>
+<style>
+  :root{
+    --paper:#fbfaf8;--ink:#1c1b18;--ink-2:#33302b;--muted:#6f6b63;--faint:#aaa49a;
+    --accent:#b4540a;--accent-tint:rgba(180,84,10,.06);--accent-strong:rgba(180,84,10,.13);
+    --card:#fff;--fill:#f4f1ec;--fill-2:#e8e4dc;--bad:#a33a2b;--success:#3d7a4e;
+    --line:rgba(28,27,24,.09);--line-strong:rgba(28,27,24,.16);
+    --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;--radius:8px;--gutter:clamp(16px,3vw,54px)
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid rgba(180,84,10,.32);outline-offset:2px}
+  #app{min-height:100vh;display:grid;grid-template-columns:232px minmax(0,1fr)}
+  .sidebar{position:sticky;top:0;height:100vh;padding:24px 16px;border-right:1px solid var(--line);background:var(--card);display:flex;flex-direction:column}
+  .sidebar .brand-group{padding:4px 10px 28px}
+  .app-frame{min-width:0}
+  header{border-bottom:1px solid var(--line);background:rgba(251,250,248,.94)}
+  .topbar{min-height:52px;padding:8px var(--gutter);display:flex;justify-content:flex-end;align-items:center;gap:24px}
+  .brand-group{justify-self:start;display:flex;align-items:baseline;gap:12px}
+  .brand{font:italic 20px/1 var(--serif);color:var(--accent);letter-spacing:-.01em}
+  .bar-end{justify-self:end;display:flex;align-items:center;gap:12px}
+  .preview-control{display:flex;align-items:center;gap:8px}
+  .preview-banner{min-height:44px;padding:9px var(--gutter);display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--accent-tint);border-bottom:1px solid var(--accent-strong)}
+  .preview-banner p{margin:0;color:var(--ink-2)}
+  .preview-banner strong{font-weight:600}
+  .spacer{flex:1}
+  main{width:100%;max-width:1280px;margin:0 auto;padding:0 var(--gutter) 48px;animation:rise .35s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .phead{padding:22px 0 16px}
+  .section-title{font-size:11px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  h1{font:400 32px/1.15 var(--serif);letter-spacing:-.015em;margin:2px 0 5px}
+  h2{font:400 22px/1.2 var(--serif);margin:0 0 8px}
+  h3{font-size:13.5px;font-weight:600;margin:16px 0 6px}
+  .lede{max-width:68ch;color:var(--muted);font-size:15px;margin:0}
+  input,select,textarea,button{font:inherit;color:var(--ink)}
+  input,select,textarea{padding:8px 11px;border:1px solid var(--line-strong);border-radius:var(--radius);background:var(--card)}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  button{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid var(--line-strong);border-radius:var(--radius);background:var(--card);cursor:pointer;font-size:14px;font-weight:550;white-space:nowrap}
+  button:hover:not(:disabled){background:var(--fill)}
+  button:disabled{opacity:.45;cursor:default}
+  button.primary{background:var(--ink);color:var(--paper);border-color:transparent}
+  button.primary:hover:not(:disabled){background:var(--ink-2)}
+  .icon-button{width:34px;padding:8px;color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .muted{color:var(--muted)}.faint{color:var(--faint)}.err{color:var(--bad)}
+  .mono{font-family:var(--mono);font-size:12.5px}
+  .card,.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .scroll{overflow:auto}
+  table{border-collapse:collapse;width:100%;background:var(--card);font-size:14px}
+  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:650;padding:11px 14px;border-bottom:1px solid var(--line)}
+  td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr{cursor:pointer}tbody tr:hover{background:var(--accent-tint)}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12.5px}
+  .sentinel{padding:15px;text-align:center;color:var(--faint)}.sentinel:empty{display:none}
+  .trace-pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 15px 15px}
+  .trace-pagination .sentinel{padding:0}
+  a{color:var(--accent)}
+  .tabs{display:flex;flex-direction:column;gap:4px}
+  .tab{width:100%;justify-content:flex-start;border:0;background:none;padding:9px 10px;color:var(--muted);font-size:14px}
+  .tab:hover{color:var(--ink);background:var(--accent-tint)}
+  .tab.active{background:var(--fill);color:var(--ink);font-weight:650}
+  .setup-parent{margin-top:12px}
+  .setup-parent.active{background:none;color:var(--ink)}
+  .subnav{display:flex;flex-direction:column;gap:2px;margin:1px 0 8px 14px;padding-left:10px;border-left:1px solid var(--line-strong)}
+  .subnav .tab{padding:7px 10px;font-size:13px}
+  .nav-spacer{flex:1}
+  .setup-view .phead{padding-top:20px}
+  .page-title-row,.source-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .page-title-row h1{margin:0}
+  .status-badge{margin-left:0}
+  .notice{padding:12px 14px;border:1px solid var(--accent-strong);border-radius:var(--radius);background:var(--accent-tint);margin-bottom:14px}
+  #login,#pwchange{max-width:380px;margin:80px auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  #login h1,#pwchange h1{font-size:26px;margin:0 0 6px}
+  #login input,#pwkit input{width:100%;margin-bottom:10px}
+  #pwkit{max-width:320px}
+  .query-panel{margin-bottom:16px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;display:flex;align-items:center;gap:16px;padding:0 0 14px;overflow:visible}
+  .query-head{padding:0;border:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:none}
+  .query-head label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .date-range{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .date-range label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .date-range input{width:190px}
+  .date-range-custom{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .filter-area{padding:0 0 0 16px;border-left:1px solid var(--line);display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+  .filter-title{display:flex;align-items:center;gap:10px;margin:0;flex:none}
+  .filter-title .section-title{display:none}
+  .filter-row{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(110px,.6fr) minmax(180px,1fr) auto;gap:8px;margin-top:8px}
+  .filter-row>*{min-width:0;width:100%}
+  .filter-no-value{padding:8px 11px}
+  .trace-table{margin-bottom:0;border:0;border-radius:0;background:transparent}
+  .span{padding:0;border-bottom:1px solid var(--line)}
+  .span:last-child{border-bottom:0}
+  .span-summary{display:block;padding:15px 16px;cursor:pointer;list-style:none}
+  .span-summary::-webkit-details-marker{display:none}
+  .span-summary:hover{background:var(--fill)}
+  .span-line{display:grid;grid-template-columns:minmax(260px,1fr) minmax(160px,.65fr) 20px;gap:24px;align-items:center}
+  .span-tree{display:flex;align-items:flex-start;gap:10px;padding-left:calc(var(--depth) * 20px);position:relative}
+  .span-tree:before{content:"";position:absolute;left:calc(var(--depth) * 20px + 4px);top:10px;bottom:-26px;border-left:1px solid var(--line-strong)}
+  .span:last-child .span-tree:before{display:none}
+  .span-dot{width:9px;height:9px;border:2px solid var(--accent);background:var(--card);border-radius:50%;margin-top:5px;position:relative;z-index:1;flex:none}
+  .span-title{display:flex;flex-direction:column;min-width:0}.span-title strong{font-weight:600}
+  .span-meta{color:var(--faint);overflow-wrap:anywhere}
+  .timeline{height:2px;background:var(--fill-2);position:relative}.timeline-marker{position:absolute;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
+  .span-toggle{color:var(--faint);font-size:22px;line-height:1;transition:transform .18s ease}
+  .span[open] .span-toggle{transform:rotate(90deg)}
+  .attrs{display:flex;flex-wrap:wrap;gap:7px;margin:0 16px 16px calc(var(--depth) * 20px + 35px);font-family:var(--mono);font-size:11.5px;color:var(--muted);min-width:0}
+  .attr{display:flex;flex-wrap:wrap;gap:5px;max-width:100%;padding:4px 8px;background:var(--fill);border-radius:6px;border:1px solid var(--line)}
+  .attr-key{color:var(--faint);white-space:normal;overflow-wrap:anywhere}.attr-value{color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:80ch}
+  table.static tbody tr{cursor:default}table.static tbody tr:hover{background:inherit}
+  .expr{font-family:var(--mono);font-size:12.5px;background:var(--fill);padding:9px 11px;border-radius:6px;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+  .kv{font-family:var(--mono);font-size:12px}.kv span{margin-right:12px;white-space:normal;overflow-wrap:anywhere}
+  .badge{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:2px 7px;color:var(--muted);margin-left:6px;white-space:nowrap}
+  .note{color:var(--muted);font-size:14px;margin:14px 0 0}
+  .source-head{align-items:flex-start;margin-top:8px}
+  .source-summary{min-width:0}.source-table{font-weight:600}.source-fields{margin:4px 0 0;color:var(--muted);overflow-wrap:anywhere}
+  .wiz{padding:18px;margin-bottom:14px}.wiz h2{margin-bottom:4px}
+  .cand{border-top:1px solid var(--line);padding:12px 0}.cand:last-child{padding-bottom:0}
+  .bindform{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;max-width:540px;margin:10px 0}
+  td.ck{text-align:center;width:1%}td.ck input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+  tr.rowerr td{background:rgba(163,58,43,.06)}
+  .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-family:var(--mono);font-size:12px;background:var(--fill);margin:0 6px 6px 0}
+  .chip button{border:0;background:none;padding:0;color:var(--muted);font-size:13px;line-height:1}
+  .role-picker{display:flex;gap:6px;flex-wrap:wrap;min-width:240px}
+  .role-choice{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:var(--fill);font-size:13px;cursor:pointer}
+  .role-choice input{width:15px;height:15px;min-height:0;padding:0;margin:0;accent-color:var(--accent)}
+  .role-choice:has(input:disabled){cursor:default;opacity:.55}
+  .role-picker-more{position:relative}.role-picker-more>summary{min-height:34px;padding:6px 9px;color:var(--muted);cursor:pointer;font-size:13px}
+  .role-picker-more-options{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .form-field{display:grid;gap:5px;min-width:0}
+  .form-field>label,.field-label,.role-fieldset legend{color:var(--muted);font-size:12px;font-weight:600}
+  .field-label{display:block;margin-bottom:5px}
+  .role-fieldset{min-width:240px;margin:0;padding:0;border:0}
+  .role-fieldset legend{margin-bottom:5px}
+  .connect-stack{display:grid;gap:10px}
+  .connect-label{margin:14px 0 2px;padding-left:2px;color:var(--faint);font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  .connect-group{border-radius:16px}
+  .connect-section+.connect-section{border-top:1px solid var(--line)}
+  .connect-section>summary{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;cursor:pointer;list-style:none}
+  .connect-section>summary::-webkit-details-marker{display:none}
+  .connect-section>summary h2{margin:0 0 4px}
+  .connect-section>summary p{margin:0}
+  .connect-section>summary:after{content:"›";font-size:24px;line-height:1;color:var(--faint);transition:transform .18s ease}
+  .connect-section[open]>summary:after{transform:rotate(90deg)}
+  .connect-section[open]>summary{padding-bottom:16px}
+  .connect-body{padding:0 22px 22px}
+  .connect-body>.row:first-child{margin-top:16px}
+  .connect-endpoint{display:flex;align-items:center;gap:8px;margin:16px 0 0;padding:10px 12px;background:var(--fill);border-radius:var(--radius)}
+  .connect-endpoint code{flex:1;overflow-wrap:anywhere}
+  .span-fields{display:grid;gap:10px;margin:0 16px 16px calc(var(--depth) * 20px + 35px)}
+  .span-field-group{border-top:1px solid var(--line);padding-top:10px}
+  .span-field-group:first-child{border-top:0;padding-top:0}
+  .span-field-group h3{margin:0 0 7px;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .span-field-group .attrs{margin:0}
+  .tok{border:1px solid var(--accent-strong);background:var(--accent-tint);border-radius:var(--radius);padding:14px;margin-top:14px}.tok .t{font-family:var(--mono);font-size:13px;overflow-wrap:anywhere;margin:8px 0}
+  .snip{position:relative;margin:8px 0 14px}.snip pre{font-family:var(--mono);font-size:12px;background:var(--fill);padding:10px 12px;border-radius:6px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.snip button{position:absolute;top:6px;right:6px;padding:2px 8px;font-size:11px}
+  .role-card-head,.role-builder-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .role-card{padding:16px 18px;margin-bottom:10px}.role-card h2{margin:0}
+  .role-policy{margin-top:12px}.role-policy+.role-policy{padding-top:12px;border-top:1px solid var(--line)}
+  .policy-config{margin-top:8px}.policy-config>summary{width:max-content;color:var(--muted);cursor:pointer;font-size:13px}.policy-config .expr{margin-top:8px}
+  .role-summary{margin:0 0 9px;color:var(--muted);font-size:14px}.role-policy .expr{margin-top:5px}
+  .role-builder{padding:20px;margin-bottom:14px}.role-builder-head{margin-bottom:18px}.role-builder-head h2{margin:0}
+  .role-builder label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}.role-builder-name{width:min(360px,100%);margin-bottom:16px}
+  .role-match{display:flex;align-items:center;gap:8px;margin-bottom:8px}.role-match label{margin:0}.role-match select{width:auto}
+  .condition-row{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(145px,.8fr) minmax(150px,.8fr) minmax(190px,1.1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .condition-row>*{min-width:0;width:100%}.condition-row .field-remove{width:34px}.builder-actions{display:flex;gap:8px;align-items:center;margin-top:16px}.builder-actions .delete-role{margin-left:auto;color:var(--bad)}
+  #flds-tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius)}#flds-tablewrap table{border:0}#flds-tablewrap thead th{position:sticky;top:0;background:var(--card);z-index:1}#flds-tablewrap td{padding:10px 12px}#flds-tablewrap td:first-child{overflow-wrap:anywhere;max-width:560px}
+  .field-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 10px}.field-toolbar>input{margin-left:auto}
+  .field-name{font-family:var(--mono);font-size:12.5px}.field-source{display:block;margin-top:2px;color:var(--faint);font-size:12px}.field-type{color:var(--muted)}
+  .field-editor{display:flex;align-items:center;gap:8px}.field-editor select{max-width:190px}.field-editor input{width:min(300px,100%)}
+  .field-remove{border:0;background:none;color:var(--faint);font-size:18px;padding:4px 8px}.field-remove:hover:not(:disabled){color:var(--bad);background:rgba(163,58,43,.06)}
+  .setup-subhead{border-top:1px solid var(--line);padding-top:18px;margin-top:18px}
+  @media(max-width:800px){
+    #app{grid-template-columns:1fr}
+    .sidebar{position:static;height:auto;padding:12px var(--gutter);border-right:0;border-bottom:1px solid var(--line)}
+    .sidebar .brand-group{padding:4px 0 12px}
+    .tabs{flex-direction:row;overflow:auto}
+    .tab{width:auto;white-space:nowrap}
+    .setup-parent{margin-top:0}
+    .subnav{flex-direction:row;margin:0;padding-left:0;border-left:0}
+    .nav-spacer{display:none}
+    .topbar{min-height:48px;padding-left:var(--gutter);padding-right:var(--gutter)}
+    .bar-end{width:100%;justify-content:flex-end;flex-wrap:wrap}
+    .preview-control{flex:1 1 auto;justify-content:flex-end}
+    .preview-control label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .preview-control select{max-width:100%}
+    .preview-banner{align-items:flex-start}
+    .query-panel{display:block;padding-bottom:12px}
+    .filter-area{margin-top:12px;padding:12px 0 0;border-left:0;border-top:1px solid var(--line)}
+    .filter-row{grid-template-columns:1fr auto}
+    .filter-row>select,.filter-row>input,.filter-row>.filter-no-value{grid-column:1}
+    .filter-row>.icon-button{grid-column:2;grid-row:1/4;align-self:center;width:34px}
+    .filter-title{align-items:flex-start}
+    .span-line{grid-template-columns:1fr 20px}
+    .condition-row{grid-template-columns:1fr 1fr}
+    .condition-row .field-remove{grid-column:2;justify-self:end}
+    .timeline{display:none}
+    .bar-end #who{display:none}
+    .phead{padding-top:18px}
+    td,th{padding:10px}
+    .date-range-custom{display:grid;grid-template-columns:auto minmax(0,1fr);width:100%}
+    .date-range-custom input{width:100%;max-width:100%}
+    .query-head input{max-width:100%}
+  }
+</style>
+<link rel="stylesheet" href="/ui/design-system.css">
+
+<div id="login" hidden>
+  <h1>LightShip</h1>
+  <label class="field-label" for="u">Username</label>
+  <input id="u" autocomplete="username">
+  <label class="field-label" for="p">Password</label>
+  <input id="p" type="password" autocomplete="current-password">
+  <button class="primary" id="go" style="width:100%">Sign in</button>
+  <div id="demo-entry" data-demo-only hidden style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line)">
+    <p style="margin:0 0 8px"><strong>Public demo credentials</strong></p>
+    <p class="muted" style="margin:0">Username: <code id="demo-username"></code></p>
+    <p class="muted" style="margin:4px 0 0">Password: <code id="demo-password"></code></p>
+    <p style="margin:12px 0 0"><a href="https://lightship.mintlify.site/guides/tenant-scoped-trace-access" target="_blank" rel="noreferrer">Follow the guide →</a></p>
+  </div>
+  <p id="loginerr" class="err" role="alert" aria-live="polite" style="min-height:1.2em;margin:10px 0 0"></p>
+</div>
+
+<!-- Shown instead of the whole application while must_change_password is set. There is deliberately
+     nothing else on it: the server answers 403 to every route but this one, so a nav would only
+     offer doors that do not open. -->
+<div id="pwchange" hidden>
+  <h1>Choose a private password</h1>
+  <p class="muted" style="margin:0 0 16px">Replace your temporary password before you continue.</p>
+  <div id="pwchange-slot">
+    <!-- #pwkit lives here or in Connect, whichever is open — one form, one submit path. -->
+    <div id="pwkit">
+      <label class="field-label" for="pw-cur">Current password</label>
+      <input id="pw-cur" type="password" autocomplete="current-password">
+      <label class="field-label" for="pw-new">New password</label>
+      <input id="pw-new" type="password" autocomplete="new-password">
+      <label class="field-label" for="pw-new2">Confirm new password</label>
+      <input id="pw-new2" type="password" autocomplete="new-password">
+      <button class="primary" id="pw-go" style="width:100%">Change password</button>
+      <p id="pw-msg" class="err" role="status" aria-live="polite" style="min-height:1.2em;margin:10px 0 0"></p>
+    </div>
+  </div>
+  <p style="margin:12px 0 0"><button id="pw-signout">Sign out</button></p>
+</div>
+
+<div id="app" hidden>
+  <aside class="sidebar">
+    <div class="brand-group"><span class="brand">LightShip</span></div>
+    <nav class="tabs" id="tabs" aria-label="Primary navigation" hidden>
+      <button class="tab active" data-view="traces">Traces</button>
+      <button class="tab setup-parent" data-view="schema" data-setup-root data-admin hidden>Setup</button>
+      <div class="subnav">
+        <button class="tab" data-view="schema" data-admin hidden>Connect data</button>
+        <button class="tab" data-view="roles" data-admin hidden disabled>Define roles</button>
+        <button class="tab" data-view="users" data-admin hidden disabled>Manage users</button>
+      </div>
+      <button class="tab" data-view="keys" data-preview-hidden>Connect</button>
+      <button class="tab" data-view="audit" data-admin hidden>Audit</button>
+    </nav>
+    <div class="nav-spacer"></div>
+  </aside>
+  <div class="app-frame">
+    <header>
+      <div class="topbar">
+      <div class="bar-end">
+        <div class="preview-control" id="role-preview-control" hidden>
+          <label class="faint" id="role-preview-label" for="role-preview">Preview role</label>
+          <select id="role-preview"><option value="">Admin interface</option></select>
+        </div>
+        <span class="muted mono" id="who"></span>
+        <button id="signout">Sign out</button>
+      </div>
+      </div>
+      <div class="preview-banner" id="preview-banner" role="status" hidden>
+        <p><strong id="preview-banner-title"></strong> <span id="preview-banner-detail"></span></p>
+        <button id="preview-exit">Exit preview</button>
+      </div>
+    </header>
+    <main>
+    <div id="view-list">
+      <div class="phead">
+        <h1>Traces</h1>
+      </div>
+      <div class="panel query-panel">
+        <div class="query-head date-range" id="winctl">
+          <label for="trace-range-preset">Range</label>
+          <select id="trace-range-preset">
+            <option value="demo" data-demo-window-only hidden disabled>Demo dataset</option>
+            <option value="1">Past hour</option><option value="24" selected>Past 24 hours</option>
+            <option value="72">Past 3 days</option><option value="168">Past 7 days</option>
+            <option value="custom">Custom</option>
+          </select>
+          <span class="date-range-custom" id="trace-custom-range" hidden>
+            <label for="from">from</label><input id="from" type="datetime-local">
+            <label for="to">to</label><input id="to" type="datetime-local">
+          </span>
+        </div>
+        <div class="filter-area">
+          <div class="filter-title">
+            <p class="section-title">Filters</p>
+            <button id="filter-add">+ Add filter</button>
+            <span class="faint" id="filter-empty">No filters</span>
+          </div>
+          <div id="filter-rows"></div>
+          <p class="err mono" id="filter-error" role="alert" aria-live="polite" hidden></p>
+        </div>
+      </div>
+      <div class="panel scroll trace-table">
+        <table>
+          <thead><tr>
+            <th>started</th><th>root operation</th><th data-demo-only hidden>tenant</th>
+            <th class="num">spans</th><th class="num">duration</th><th>trace id</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="trace-pagination">
+          <span class="sentinel" id="sentinel" role="status" aria-live="polite">loading…</span>
+          <button id="load-more" hidden>Load more</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-detail" hidden>
+      <div class="phead">
+        <button id="back">← traces</button>
+        <h1 class="mono" id="detail-id" style="margin-top:14px"></h1>
+      </div>
+      <div class="panel" id="spans"></div>
+    </div>
+
+    <div class="setup-view" id="view-schema" hidden>
+      <div class="phead">
+        <div class="page-title-row">
+          <h1>Connect trace data</h1>
+          <span id="schema-state" class="badge status-badge" role="status" aria-live="polite"></span>
+        </div>
+        <p class="lede">Choose the trace source and searchable fields.</p>
+      </div>
+      <p id="schema-err" class="err" role="alert" aria-live="polite" hidden></p>
+      <p id="schema-compile-err" class="err mono" role="alert" aria-live="polite" style="margin:0 0 10px" hidden></p>
+
+      <div class="card wiz">
+        <h2>Trace table</h2>
+        <div id="src-current" hidden>
+          <div class="source-head">
+            <div id="src-bindgrid" class="source-summary"></div>
+            <button id="src-change">Change</button>
+          </div>
+        </div>
+        <div id="src-pick" hidden>
+          <p id="src-status" class="muted" style="margin:12px 0 0"></p>
+          <div id="src-cands"></div>
+          <div id="src-editor" hidden>
+            <h3>Bind <span id="src-table" class="mono"></span></h3>
+            <div id="src-roles" class="bindform"></div>
+            <p class="muted" style="margin:0">All five fields are required.</p>
+            <p id="src-err" class="err mono" hidden></p>
+            <div class="row" style="margin-top:12px">
+              <button class="primary" id="src-confirm">Bind this table</button>
+              <button id="src-editor-back">Back to tables</button>
+            </div>
+          </div>
+          <p id="src-cancelrow" style="margin:14px 0 0" hidden>
+            <button id="src-cancel">Keep current table</button></p>
+        </div>
+        <h3 class="setup-subhead">Fields</h3>
+        <p class="muted" style="margin:0"><b>Searchable</b> fields narrow trace searches. <b>Access rules</b> fields can decide who sees a trace.</p>
+        <p id="flds-locked" class="muted" style="margin:12px 0 0">Choose a trace table first.</p>
+        <div id="flds-body" hidden>
+          <div class="field-toolbar">
+            <button id="flds-add">+ Add field</button>
+            <input id="flds-q" aria-label="Search fields" placeholder="Search fields" style="width:220px">
+          </div>
+          <div class="date-range" id="flds-discovery" hidden>
+            <label for="flds-range-preset">Range</label>
+            <select id="flds-range-preset">
+              <option value="demo" data-demo-window-only hidden disabled>Demo dataset</option>
+              <option value="1">Past hour</option><option value="24" selected>Past 24 hours</option>
+              <option value="72">Past 3 days</option><option value="168">Past 7 days</option>
+              <option value="custom">Custom</option>
+            </select>
+            <span class="date-range-custom" id="flds-custom-range" hidden>
+              <label for="flds-from">from</label><input id="flds-from" type="datetime-local">
+              <label for="flds-to">to</label><input id="flds-to" type="datetime-local">
+            </span>
+            <button id="flds-sample">Refresh discovered fields</button>
+          </div>
+          <p id="flds-samplenote" class="faint" role="status" aria-live="polite" style="margin:0 0 10px"></p>
+          <div id="flds-tablewrap">
+            <table class="static">
+              <thead><tr id="flds-head">
+                <th>field</th>
+                <th>type</th>
+                <th style="text-align:center">searchable</th>
+                <th style="text-align:center">access rules</th>
+                <th><span class="sr-only">Actions</span></th>
+              </tr></thead>
+              <tbody id="flds-rows"></tbody>
+            </table>
+          </div>
+          <p id="flds-err" class="err mono" role="alert" aria-live="polite" hidden></p>
+          <div class="row" style="margin-top:14px">
+            <button class="primary" id="flds-save">Save fields</button>
+            <span id="flds-summary" class="muted"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="view-keys" hidden>
+      <div class="phead">
+        <h1>Connect</h1>
+        <p class="lede">Connect LightShip to AI tools and manage how you sign in.</p>
+      </div>
+      <p id="keys-err" class="err" role="alert" aria-live="polite" hidden></p>
+      <div class="connect-stack">
+        <p class="connect-label">Developer access</p>
+        <div class="card connect-group">
+          <details class="connect-section" id="keys-section">
+            <summary><div><h2>API keys</h2>
+              <p class="muted">Create and revoke credentials for programmatic access.</p></div></summary>
+            <div class="connect-body">
+            <div id="keys-mintslot">
+              <div id="mintkit">
+                <div class="row" style="align-items:end">
+                  <div class="form-field"><label for="key-name">Key name</label><input id="key-name" placeholder="For example, local agent" style="width:220px"></div>
+                  <div class="form-field"><label for="key-expiry">Expires</label><select id="key-expiry">
+                    <option value="" selected>Never</option>
+                    <option value="24h">24 hours</option><option value="168h">7 days</option>
+                    <option value="720h">30 days</option><option value="2160h">90 days</option>
+                  </select></div>
+                  <button class="primary" id="key-mint">Create key</button>
+                </div>
+                <p id="key-err" class="err mono" role="alert" aria-live="polite" hidden></p>
+                <p id="key-demo-note" class="note" data-demo-only hidden>Public demo keys expire after 24 hours.</p>
+                <div id="key-token" class="tok" role="status" aria-live="polite" hidden>
+                  <b>Copy this token now. It is shown once; only its hash is stored.</b>
+                  <div class="t" id="key-token-val"></div>
+                  <button id="key-copy" aria-live="polite">Copy token</button>
+                </div>
+              </div>
+            </div>
+            <h3 id="keys-listtitle">Your API keys</h3>
+            <div class="panel scroll"><table class="static">
+                <thead><tr id="keys-head"></tr></thead>
+                <tbody id="keys-rows"></tbody>
+            </table></div>
+            <div class="sentinel" id="keys-note" role="status" aria-live="polite"></div>
+            <p class="note">Revoked keys stop working immediately and stay in this list for audit history.</p>
+            </div>
+          </details>
+          <details class="connect-section" id="mcp-section">
+            <summary><div><h2>Connect an AI client</h2>
+              <p class="muted">Use LightShip traces from an MCP-compatible AI tool.</p></div></summary>
+            <div class="connect-body">
+              <div class="connect-endpoint"><code id="mcp-url"></code><button id="mcp-copy" aria-live="polite">Copy</button></div>
+              <p class="note" data-demo-only hidden><b>Quick demo:</b> create a key above, then configure this URL as a
+                remote HTTP MCP endpoint with <code>Authorization: Bearer YOUR_KEY</code>. It provides
+                bounded trace search and detail tools.</p>
+              <p class="note"><b>Full local setup:</b> the LightShip companion adds workspace
+                exports for larger investigations without returning every span through model context.</p>
+              <p class="note"><a href="https://lightship.mintlifysite.com/use/mcp" target="_blank" rel="noreferrer">Quick connection and advanced local-companion guide →</a></p>
+            </div>
+          </details>
+        </div>
+
+        <p class="connect-label">Account</p>
+        <div class="card connect-group">
+          <!-- Connect owns the password form when a password change is not forced. -->
+          <details class="connect-section" id="password-section">
+            <summary><div><h2>Password</h2>
+              <p class="muted">Update your sign-in password and revoke other browser sessions.</p></div></summary>
+            <div class="connect-body">
+              <p class="muted">API keys keep working after a password change.</p>
+              <div id="keys-pwslot"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-view" id="view-roles" hidden>
+      <div class="phead">
+        <div class="page-title-row">
+          <div>
+            <h1>Roles</h1>
+            <p class="lede">Choose which traces each role can see.</p>
+          </div>
+          <button class="primary" id="role-new">+ New role</button>
+        </div>
+      </div>
+      <p id="roles-err" class="err" role="alert" aria-live="polite" hidden></p>
+      <div id="roles-list"></div>
+      <p class="note">Need the underlying policy syntax? See the <a href="https://lightship.mintlifysite.com/docs/concepts/policies" target="_blank" rel="noreferrer">policy documentation</a>.</p>
+    </div>
+
+    <div class="setup-view" id="view-users" hidden>
+      <div class="phead">
+        <h1>Users</h1>
+        <p class="lede">Create accounts and assign roles.</p>
+      </div>
+      <p id="users-err" class="err" role="alert" aria-live="polite" hidden></p>
+      <div class="card wiz">
+        <h2>New user</h2>
+        <div class="row" style="align-items:end">
+          <div class="form-field"><label for="user-new-name">Username</label><input id="user-new-name" placeholder="For example, alex" style="width:200px"></div>
+          <fieldset class="role-fieldset"><legend>Roles</legend><div id="user-new-roles" class="role-picker" role="group"></div></fieldset>
+          <button class="primary" id="user-new">Create user</button>
+        </div>
+        <div id="user-password" class="tok" role="status" aria-live="polite" hidden></div>
+      </div>
+      <div class="panel scroll"><table class="static">
+          <thead><tr><th>username</th><th>roles</th><th></th></tr></thead>
+          <tbody id="users-rows"></tbody>
+      </table></div>
+      <div class="sentinel" id="users-note" role="status" aria-live="polite"></div>
+    </div>
+
+    <div id="view-audit" hidden>
+      <div class="phead">
+        <div class="page-title-row">
+          <div><h1>Audit</h1><p class="lede">Review recent access and configuration activity.</p></div>
+          <input id="audit-q" aria-label="Filter audit entries" placeholder="Filter entries" style="width:280px">
+        </div>
+      </div>
+      <p id="audit-err" class="err" role="alert" aria-live="polite" hidden></p>
+      <div class="panel scroll"><table class="static">
+          <thead><tr><th>time</th><th>actor</th><th>action</th><th>detail</th></tr></thead>
+          <tbody id="audit-rows"></tbody>
+      </table></div>
+      <div class="sentinel" id="audit-note" role="status" aria-live="polite"></div>
+    </div>
+    </main>
+  </div>
+</div>
+
+<script type="module" src="/ui/app.js"></script>
+</html>
