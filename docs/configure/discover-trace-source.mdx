@@ -1,0 +1,50 @@
+---
+title: "Connect Trace Data"
+sidebarTitle: "Connect Trace Data"
+description: "Choose the table that contains your traces and the fields users can search or use in access rules."
+---
+
+Use **Setup → Connect data** to choose the table that contains your traces and configure its fields.
+LightShip suggests likely tables and field mappings, but you review the configuration before saving it.
+
+## Choose the trace table
+
+Select a suggested table, or change the current table. LightShip maps the five columns it needs:
+
+- `trace_id`
+- `timestamp`
+- `span_id`
+- `parent_span_id`
+- `name`
+
+Your physical column names can be different. The detected mappings are shown with the selected table.
+
+## Choose fields
+
+The fields table contains discovered columns and sampled attribute keys. For each field, choose:
+
+- **Searchable** — users can use the field to narrow trace queries.
+- **Access rules** — roles can use the field to decide which traces someone may see.
+
+Field types come from the trace schema and are read-only. Number fields can be searchable but cannot
+be used in access rules.
+
+Use **+ Add field** when a column or map key was not found in the sample. Saving replaces the current
+field selection, and LightShip prevents you from removing a field that an existing role still uses.
+
+<Info>
+  Discovery samples recent rows to find dynamic map keys. A missing key can still exist in the table;
+  add it with **+ Add field** if you know its name.
+</Info>
+
+## API access
+
+<CardGroup cols={2}>
+  <Card title="Schema API" icon="code" href="/api-reference/access/schema">
+    Discover tables, save the binding and fields, or review index suggestions over REST.
+  </Card>
+
+  <Card title="Define roles" icon="users" href="/configure/roles-and-policies">
+    Use access-rule fields to decide which traces each role can see.
+  </Card>
+</CardGroup>

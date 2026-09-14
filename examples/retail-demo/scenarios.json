@@ -1,0 +1,91 @@
+{
+  "dataset_version": "retail-pilot-v1",
+  "prompt_version": "support-agent-v1",
+  "runner_version": "retail-runner-v3",
+  "scenarios": [
+    {
+      "id": "cedar-rejected-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1001", "customer_message": "I mailed this return yesterday. Has my refund been processed?",
+      "order_age_days": 52, "return_received": false, "item_condition": "worn",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "rejected",
+      "expected_family": "refund_promised_after_rejection"
+    },
+    {
+      "id": "cedar-rejected-02", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1002", "customer_message": "Please refund the jacket I bought seven weeks ago. It is unused.",
+      "order_age_days": 49, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "rejected",
+      "expected_family": "refund_promised_after_rejection"
+    },
+    {
+      "id": "cedar-outdated-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1003", "customer_message": "Can I return my unopened shoes after 38 days?",
+      "order_age_days": 38, "return_received": false, "item_condition": "unused",
+      "policy_variant": "outdated", "eligibility": "rejected", "refund_outcome": "rejected",
+      "expected_family": "outdated_return_policy"
+    },
+    {
+      "id": "cedar-settlement-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1004", "customer_message": "You received my return. Please issue the refund now.",
+      "order_age_days": 18, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "completed",
+      "expected_family": "refund_succeeded_customer_returns"
+    },
+    {
+      "id": "cedar-settlement-02", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1005", "customer_message": "My return was accepted today. When will I see the money?",
+      "order_age_days": 21, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "completed",
+      "expected_family": "refund_succeeded_customer_returns"
+    },
+    {
+      "id": "cedar-timeout-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1006", "customer_message": "Please process my eligible return.",
+      "order_age_days": 12, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "timeout",
+      "expected_family": "backend_timeout"
+    },
+    {
+      "id": "cedar-refusal-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1007", "customer_message": "I wore these boots for two months but want a refund.",
+      "order_age_days": 63, "return_received": false, "item_condition": "worn",
+      "policy_variant": "current", "eligibility": "rejected", "refund_outcome": "rejected",
+      "expected_family": "correct_refusal"
+    },
+    {
+      "id": "cedar-success-01", "tenant": "cedar", "retailer": "Cedar & Co.",
+      "order_id": "CED-1008", "customer_message": "The warehouse received my unopened return. Can you refund it?",
+      "order_age_days": 10, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "completed",
+      "expected_family": "ordinary_success"
+    },
+    {
+      "id": "northstar-refusal-01", "tenant": "northstar", "retailer": "Northstar Outfitters",
+      "order_id": "NOR-2001", "customer_message": "Can I return this unused tent after 70 days?",
+      "order_age_days": 70, "return_received": false, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "rejected", "refund_outcome": "rejected",
+      "expected_family": "correct_refusal"
+    },
+    {
+      "id": "northstar-success-01", "tenant": "northstar", "retailer": "Northstar Outfitters",
+      "order_id": "NOR-2002", "customer_message": "My unused return arrived. Please issue the refund.",
+      "order_age_days": 42, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "completed",
+      "expected_family": "ordinary_success"
+    },
+    {
+      "id": "northstar-timeout-01", "tenant": "northstar", "retailer": "Northstar Outfitters",
+      "order_id": "NOR-2003", "customer_message": "Please refund the return you received last week.",
+      "order_age_days": 25, "return_received": true, "item_condition": "unused",
+      "policy_variant": "current", "eligibility": "eligible", "refund_outcome": "timeout",
+      "expected_family": "backend_timeout"
+    },
+    {
+      "id": "northstar-outdated-01", "tenant": "northstar", "retailer": "Northstar Outfitters",
+      "order_id": "NOR-2004", "customer_message": "Is my unused 75-day-old purchase still returnable?",
+      "order_age_days": 75, "return_received": false, "item_condition": "unused",
+      "policy_variant": "outdated", "eligibility": "rejected", "refund_outcome": "rejected",
+      "expected_family": "outdated_return_policy"
+    }
+  ]
+}

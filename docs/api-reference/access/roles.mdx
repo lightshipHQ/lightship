@@ -1,0 +1,58 @@
+---
+title: "Roles API"
+sidebarTitle: "Roles"
+description: "Create, replace, and delete LightShip roles through the admin REST API. Each role carries CEL policy expressions over marked trace fields and user attributes."
+---
+
+LightShip roles are the unit of trace access. Each role attaches one or more CEL policy expressions to a name, and users receive access as the OR of every role they hold. All role endpoints require the `admin` role and can be called with a session cookie or `Authorization: Bearer lsk_...`.
+
+## PUT /roles/{name}
+
+Create or replace a role. Invalid CEL is rejected before storage, as is a policy that references an unmarked field.
+
+<ParamField path="name" type="string" required>
+  The role name, used in user assignments.
+</ParamField>
+
+<ParamField body="policies" type="array of objects" required>
+  One or more policy objects. Each object requires `title` and `expression`; `description` is optional.
+</ParamField>
+
+### Example
+
+```bash
+curl -X PUT http://localhost:8080/roles/booking-analyst \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policies": [
+      {
+        "title": "Own user traces",
+        "expression": "SpanAttributes[\"user.id\"] == user.user_id"
+      },
+      {
+        "title": "Booking and support agents",
+        "expression": "SpanAttributes[\"gen_ai.agent.name\"] in [\"booking-agent\", \"support-agent\"]"
+      }
+    ]
+  }'
+```
+
+<Info>
+  Roles OR together. A user assigned both `booking-analyst` and a `restricted-reviewer` role sees the union of both role's authorized traces.
+</Info>
+
+## DELETE /roles/{name}
+
+Delete a role and remove its user assignments. Access changes take effect on the next request.
+
+```bash
+curl -X DELETE http://localhost:8080/roles/booking-analyst \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+## Related
+
+- [Policies](/concepts/policies)
+- [Define roles and policies](/configure/roles-and-policies)
+- [Users API](/api-reference/access/users)

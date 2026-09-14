@@ -1,0 +1,35 @@
+---
+title: "Manage Users"
+sidebarTitle: "Manage Users"
+description: "Create users and assign roles in the web UI; manage access-rule attributes through the admin API."
+---
+
+Open **Setup → Manage users** to review existing accounts. Select any number of roles for a user,
+then save the change. Access from multiple roles is combined.
+
+## Create a user
+
+In **New user**, enter a username, choose one or more roles, and select **Create user**.
+
+<Warning>
+  The generated password is shown once. Copy it before leaving the screen and deliver it securely.
+</Warning>
+
+## Manage attributes through the API
+
+User attributes are intentionally not edited as JSON in the web UI. Administrators can set or
+remove them with `PATCH /users/{username}/attributes`. When a new attribute name is saved—for
+example `tenant_id`—it immediately becomes available to role rules as `user.tenant_id`. See the
+[Users API](/api-reference/access/users) for the request format.
+
+## First-login flow
+
+The user must change the generated password before accessing traces, the **Connect** page, MCP, or administration.
+Changing it also revokes their other browser sessions.
+
+<Info>
+  Role and attribute changes apply to the user's existing sessions and API keys without rotating
+  credentials. Deleting a user revokes both.
+</Info>
+
+For API provisioning and password-hash options, see the [Users API](/api-reference/access/users).

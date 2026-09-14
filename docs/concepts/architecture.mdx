@@ -1,0 +1,75 @@
+---
+title: "Architecture"
+sidebarTitle: "Architecture"
+description: "How LightShip sits between agents, the UI, and your ClickHouse trace store, and how a request becomes an authorized result."
+---
+
+LightShip is a stateless HTTP service backed by Postgres for its own state and a read-only connection to your ClickHouse for traces. This page explains the moving parts and what happens on each request.
+
+## Components
+
+<Columns cols={2}>
+  <Card title="Control plane" icon="gear" href="/operate/deployment" arrow="true">
+    `lightship serve` hosts REST, user and administrator MCP endpoints, and the web UI on one port.
+  </Card>
+
+  <Card title="Postgres" icon="folder" href="/operate/configuration" arrow="true">
+    Stores users, roles, API keys, the access model, and the audit log. Never holds trace data.
+  </Card>
+
+  <Card title="ClickHouse" icon="layers" href="/configure/discover-trace-source" arrow="true">
+    Read-only source for OTel traces. LightShip queries it with the caller's compiled policies applied.
+  </Card>
+
+  <Card title="Web UI" icon="globe" href="/use/web-ui" arrow="true">
+    Traces, Connect, guided Setup, and Audit views served from the same origin as the API.
+  </Card>
+
+  <Card title="LightShip MCP" icon="terminal" href="/use/mcp" arrow="true">
+    `lightship mcp` runs beside a coding agent and writes bulk exports into its workspace. Its tool response contains only paths and counts.
+  </Card>
+</Columns>
+
+## Request flow
+
+<Steps>
+  <Step title="Authenticate">
+    Browser requests use a session cookie set by `POST /login`. Automation uses `Authorization: Bearer lsk_...`. API keys always act as their creator; roles and attributes are resolved on every request.
+  </Step>
+  <Step title="Resolve access">
+    LightShip loads the caller's roles and user attributes, then combines their policies with an OR. Roles OR together, so a user holding both a "standard" and a "restricted" role sees the union.
+  </Step>
+  <Step title="Compile the query">
+    The compiled policy expression is combined with the request filter (ANDed conditions) and run against the bound trace table. A trace is returned if any of its spans matches.
+  </Step>
+  <Step title="Return and audit">
+    Authorized rows are streamed back with a `next_cursor` for paging. LightShip attempts to record the query with the caller identity and timestamp.
+  </Step>
+</Steps>
+
+## Access model cache
+
+Every replica caches the compiled access model. Its age, including load and compile time, is bounded
+by `LIGHTSHIP_MODEL_TTL` (default `1m`). If an expired model cannot refresh, new model-dependent
+requests fail closed. Role assignments are read on every request; queries already in flight are not
+cancelled by a later policy change.
+
+Postgres model reads use one repeatable-read snapshot. Writes validate a proposal and atomically check its base version before persisting it. A stale proposal returns 409 without changing state.
+
+## Fail-closed guarantees
+
+LightShip returns no traces when:
+
+- The access model is missing or invalid.
+- No policy applies to the caller.
+- ClickHouse is unreachable.
+- A referenced field is unmarked or has been removed.
+
+Invalid policies are rejected before storage, as is removing a field that a stored policy still references.
+
+## What LightShip does not do
+
+- LightShip does not classify or redact data itself.
+- LightShip does not hide individual spans inside an authorized trace. If any span matches, the whole trace is returned.
+- LightShip does not implement free-text search, custom sorting, or aggregate queries. Coding agents handle those ad hoc against local authorized exports.
+- LightShip does not protect direct ClickHouse credentials. See [Deployment and security](/operate/deployment).

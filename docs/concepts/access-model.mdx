@@ -1,0 +1,48 @@
+---
+title: "Access Model"
+sidebarTitle: "Access Model"
+description: "The LightShip access model binds a ClickHouse trace table, marks fields as filterable or policy inputs, and assigns roles and attributes to users."
+---
+
+LightShip's access model is the set of decisions that governs which traces a caller can see. It lives in Postgres, is edited through the REST API or the Setup UI, and is compiled at load time so invalid policies fail fast. A trace is the authorization unit: if any span in the trace satisfies the caller's roles, the entire trace becomes visible.
+
+## Components
+
+The model has four moving parts:
+
+- **Trace source binding.** The ClickHouse table LightShip reads plus the five required structural columns: `trace_id`, `timestamp`, `span_id`, `parent_span_id`, and `name`.
+- **Marked fields.** Columns and map keys that policies and filters may reference. Each field is marked as `filterable`, `policy`, or both, and carries a `logical_type` of `string`, `string_array`, `boolean`, or `number`.
+- **User attributes.** Keys such as `tenant_id` and `user_id` that become available to policies when they are added to a user.
+- **Roles.** Named CEL expressions built from marked fields and user attributes. A user holds one or more roles.
+
+## How authorization runs
+
+On every request, LightShip resolves the caller's roles and attributes, compiles their policies, and applies them to the trace scan. Roles OR together, so a user with both a `standard` and a `restricted` role receives traces matching either policy.
+
+<Info>
+  Policy cache age is bounded by `LIGHTSHIP_MODEL_TTL` (default `1m`) for new authorization decisions. If an expired cache cannot refresh, requests fail closed with 503. A writer discards its previous model even if its immediate refresh fails. Already-authorized queries are not cancelled. Role assignments are read on every request.
+</Info>
+
+Configuration proposals are validated against a repeatable-read snapshot. Their writes lock and check that snapshot's version before changing state. A concurrent edit produces HTTP 409 rather than persisting a proposal validated against outdated fields or policies. Reload and review the current configuration before retrying.
+
+## Fail-closed guarantees
+
+LightShip refuses to serve traces when the access model is incomplete or inconsistent:
+
+- Missing configuration returns no rows.
+- No applicable policy returns no rows.
+- An unreachable trace source returns an error.
+- Invalid policies are rejected before storage.
+- Removing a field a stored policy still references is rejected.
+
+## Related topics
+
+<CardGroup cols={2}>
+  <Card title="Policies" icon="scale-balanced" href="/concepts/policies">
+    Learn the CEL expression language, supported operators, and worked examples.
+  </Card>
+
+  <Card title="Configure roles" icon="users" href="/configure/roles-and-policies">
+    Create and edit roles through the Setup UI or REST API.
+  </Card>
+</CardGroup>

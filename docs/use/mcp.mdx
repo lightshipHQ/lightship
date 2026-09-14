@@ -1,0 +1,62 @@
+---
+title: "Connect LightShip MCP"
+sidebarTitle: "MCP Clients"
+description: "Connect an AI client to LightShip for trace investigation."
+---
+
+Connect your AI client directly to LightShip's hosted MCP endpoint. This is the standard setup for
+searching and inspecting authorized traces.
+
+## Create an API key
+
+Sign in to LightShip, open **Connect**, and create a personal API key. The key begins with `lsk_...`
+and is shown only once.
+
+Use the MCP URL shown on the same page. It normally ends in `/mcp`.
+
+## Codex
+
+```bash
+export LIGHTSHIP_API_KEY='lsk_...'
+codex mcp add lightship \
+  --url https://your-lightship.example/mcp \
+  --bearer-token-env-var LIGHTSHIP_API_KEY
+```
+
+Restart Codex after adding the connection, then ask it to search or inspect your traces.
+
+## Claude Code
+
+```bash
+export LIGHTSHIP_API_KEY='lsk_...'
+claude mcp add --transport http \
+  lightship https://your-lightship.example/mcp \
+  --header "Authorization: Bearer $LIGHTSHIP_API_KEY"
+```
+
+Do not commit the API key to a repository or client configuration file.
+
+## Optional: export larger investigations
+
+The remote endpoint returns bounded search results and trace details. To let an agent write a
+larger authorized export directly into its workspace, install the local LightShip companion:
+
+```bash
+git clone https://github.com/lightshipHQ/lightship.git
+cd lightship
+go install ./cmd/lightship
+```
+
+Then configure an stdio MCP connection that runs `lightship mcp` with these environment variables:
+
+```text
+LIGHTSHIP_URL=https://your-lightship.example
+LIGHTSHIP_API_KEY=lsk_...
+```
+
+The companion adds `lightship_export_traces`, which writes JSONL under `.lightship/exports/` and
+returns only file paths and counts to the conversation. Keep `.lightship/` private.
+
+Administrator setup uses the separate `/mcp/setup` endpoint and an administrator API key. Most
+users should connect only `/mcp`. See the [MCP API reference](/api-reference/mcp) for the protocol
+and complete tool list.

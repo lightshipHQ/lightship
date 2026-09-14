@@ -1,0 +1,72 @@
+---
+title: "GET /filter/schema"
+sidebarTitle: "Filter Schema"
+description: "Return the fields the caller may filter on, their logical types, and compatible operators."
+---
+
+`GET /filter/schema` returns the fields the caller may reference in a `POST /traces/query` filter,
+together with each field's type and operators. LightShip MCP exposes the same information through
+`lightship_filter_schema`.
+
+Structural columns selected in the source binding appear in **Setup → Fields** alongside other
+table columns. An administrator enables **Searchable** on them through the same field configuration
+used for every other filter.
+
+## Endpoint
+
+```text
+GET http://localhost:8080/filter/schema
+```
+
+Authentication: session cookie or `Authorization: Bearer lsk_...`.
+
+## Response
+
+<ResponseField name="fields" type="array">
+  Field descriptors for every field the caller may reference. Each field has `map` (empty on scalar columns), `name`, `ref` (the full identifier used in filters and policies, for example `SpanAttributes["user.id"]`), `type` (one of `string`, `string_array`, `boolean`, `number`), and `operators` (present only when the field is filterable). Admins additionally see `filterable` and `policy` booleans so they can tell which fields carry which capability.
+</ResponseField>
+
+<ResponseField name="version" type="integer">
+  Access model version. Increments on every change.
+</ResponseField>
+
+<ResponseField name="limits" type="object">
+  Server-enforced ceilings: `max_conditions` per filter, `max_values` per condition, and `max_limit` for a page of traces.
+</ResponseField>
+
+<ResponseField name="semantics" type="string">
+  Plain-English summary of how conditions combine and match. Conditions AND together, and a condition matches a trace when any of its spans satisfies it.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "fields": [
+    {
+      "map": "SpanAttributes",
+      "name": "user.id",
+      "ref": "SpanAttributes[\"user.id\"]",
+      "type": "string",
+      "operators": ["eq", "ne", "in", "not_in", "prefix", "exists", "not_exists"]
+    },
+    {
+      "map": "SpanArrayAttributes",
+      "name": "langfuse.trace.tags",
+      "ref": "SpanArrayAttributes[\"langfuse.trace.tags\"]",
+      "type": "string_array",
+      "operators": ["has", "has_any", "has_all"]
+    }
+  ],
+  "version": 42,
+  "limits": {"max_conditions": 20, "max_values": 100, "max_limit": 200},
+  "semantics": "conditions are ANDed; a trace matches when any of its spans satisfies them"
+}
+```
+
+## Example
+
+```bash
+curl http://localhost:8080/filter/schema \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```

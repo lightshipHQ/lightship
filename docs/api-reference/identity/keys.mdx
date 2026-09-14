@@ -1,0 +1,75 @@
+---
+title: "API Keys"
+sidebarTitle: "API Keys"
+description: "Create, list, and revoke personal LightShip API keys. Tokens are shown once at creation and carry the creator's roles by reference on every request."
+---
+
+Personal API keys authenticate MCP clients and REST automation. Every user can manage their own keys through these three endpoints. Keys carry their creator's current roles and attributes by reference, so a role change takes effect on the next request without rotating the key.
+
+When public demo credentials are enabled, keys created by the displayed account default to 24
+hours and cannot request a longer lifetime.
+
+## POST /keys
+
+Create a personal API key. The full token is returned exactly once in the response.
+
+<ParamField body="name" type="string" required>
+  Human-readable label for the key.
+</ParamField>
+
+<ParamField body="expires_in" type="string (Go duration)">
+  Optional lifetime, for example `"720h"` for 30 days. Omit for a non-expiring key. Must be a positive Go duration.
+</ParamField>
+
+```bash
+curl -X POST http://localhost:8080/keys \
+  -H "Authorization: Bearer lsk_xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "laptop", "expires_in": "720h"}'
+```
+
+<ResponseField name="id" type="string">
+  Stable identifier for the key.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name you assigned.
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  The user the key acts as.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  The full `lsk_...` token. Returned only in this response.
+</ResponseField>
+
+<Warning>
+  The token is shown once and cannot be retrieved again. Save it now.
+</Warning>
+
+## GET /keys
+
+List all keys visible to the caller, including expired and revoked keys. Administrators see every user's keys.
+
+```bash
+curl http://localhost:8080/keys \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<ResponseField name="keys" type="array">
+  Key metadata: `id`, `name`, `username`, `created_at`, and optional `expires_at`, `last_used_at`, and `revoked_at`. The token itself is never returned.
+</ResponseField>
+
+## DELETE /keys/{id}
+
+Revoke a key immediately. Non-admin callers can only revoke their own keys.
+
+```bash
+curl -X DELETE http://localhost:8080/keys/key_abc123 \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<Info>
+  API keys act as their creator. Adjusting the creator's roles or attributes changes what every one of their keys can do, without rotation.
+</Info>

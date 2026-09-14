@@ -1,0 +1,9 @@
+/*
+ * This is the design-system switch. The application keeps stable layout and behavior classes;
+ * a design system supplies its foundation and maps those classes in one theme adapter. To try a
+ * different system, replace these imports and leave the application markup and JavaScript alone.
+ * Primer is vendored from @primer/primitives 11.10.0 and @primer/css 22.3.0.
+ */
+@import url("/ui/primer-light.css");
+@import url("/ui/primer-core.css");
+@import url("/ui/theme-primer.css");

@@ -1,0 +1,69 @@
+---
+title: "GET /me"
+sidebarTitle: "Get Profile"
+description: "Return the authenticated caller's identity, roles, preview state, and account flags."
+---
+
+`GET /me` returns the effective identity and access state for the current request. It works with
+either a browser session cookie or a personal API key, which makes it useful for verifying
+credentials and role-preview state.
+
+## Endpoint
+
+```text
+GET http://localhost:8080/me
+```
+
+Authentication: session cookie or `Authorization: Bearer lsk_...`.
+
+## Response
+
+<ResponseField name="username" type="string">
+  The caller's username.
+</ResponseField>
+
+<ResponseField name="is_admin" type="boolean">
+  Whether the effective identity holds the `admin` role. This is false while an administrator is
+  previewing a non-admin role.
+</ResponseField>
+
+<ResponseField name="actor_is_admin" type="boolean">
+  Whether the underlying authenticated actor is an administrator, including during role preview.
+</ResponseField>
+
+<ResponseField name="preview_role" type="string">
+  The role currently being previewed. Empty when preview is inactive.
+</ResponseField>
+
+<ResponseField name="roles" type="array of strings">
+  Roles used for the current request.
+</ResponseField>
+
+<ResponseField name="must_change_password" type="boolean">
+  Whether the caller must change their password before other routes become available.
+</ResponseField>
+
+<ResponseField name="is_demo" type="boolean">
+  Whether the caller is the displayed account in a deployment with hosted demo mode enabled.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "username": "alice",
+  "is_admin": false,
+  "actor_is_admin": false,
+  "preview_role": "",
+  "roles": ["booking-analyst"],
+  "must_change_password": false,
+  "is_demo": false
+}
+```
+
+## Example
+
+```bash
+curl http://localhost:8080/me \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```

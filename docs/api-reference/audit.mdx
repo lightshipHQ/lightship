@@ -1,0 +1,56 @@
+---
+title: "GET /audit"
+sidebarTitle: "Audit Log"
+description: "Read the LightShip audit log through the admin REST API. Records authentication, trace queries, and configuration changes, with in-process retention pruning."
+---
+
+The audit log records authentication, trace-query, and configuration activity. Administrators read
+it through `GET /audit` or the Audit UI. Audit writes are best-effort: a logging failure is reported
+in server logs but does not fail the original request.
+
+## Endpoint
+
+```text
+GET http://localhost:8080/audit
+```
+
+Requires the `admin` role. Authenticate with a session cookie or `Authorization: Bearer lsk_...`.
+
+## Query parameters
+
+<ParamField query="limit" type="integer">
+  Maximum entries to return. Defaults to `100`, capped at `1000`.
+</ParamField>
+
+## Response
+
+<ResponseField name="entries" type="array">
+  Audit rows in reverse chronological order. Each entry records the caller, the action, and an action-specific detail object.
+</ResponseField>
+
+## What is recorded
+
+- **Authentication**: successful sign-in, sign-out, and password changes.
+- **Queries**: caller identity, query type, filter, and timestamp.
+- **Configuration**: schema, optimization, role, user, attribute, and key changes.
+
+## Retention
+
+Retention is controlled by `LIGHTSHIP_AUDIT_RETENTION_DAYS` (default `90`). LightShip removes older
+rows at startup and every six hours while it is running.
+
+## Example
+
+```bash
+curl "http://localhost:8080/audit?limit=200" \
+  -H "Authorization: Bearer lsk_xxxxxxxx"
+```
+
+<Info>
+  The audit log lives in Postgres alongside the access model, not in ClickHouse. Backing up Postgres backs up the audit trail.
+</Info>
+
+## Related
+
+- [Audit concepts](/concepts/audit)
+- [Configuration](/operate/configuration)

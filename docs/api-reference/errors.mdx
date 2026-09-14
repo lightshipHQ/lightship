@@ -1,0 +1,46 @@
+---
+title: "Errors"
+sidebarTitle: "Errors"
+description: "Reference for LightShip REST error responses. Includes status codes, fail-closed behavior, and how policy compile and ClickHouse errors surface to callers."
+---
+
+LightShip returns standard HTTP status codes for every REST endpoint. Errors are safe by default: if the access model is missing, no policy applies, or ClickHouse is unreachable, no trace data is returned.
+
+## Response shape
+
+REST errors contain one human-readable `error` string:
+
+```json
+{
+  "error": "invalid or expired credentials"
+}
+```
+
+## Status codes
+
+| Status | Meaning |
+| --- | --- |
+| `400 Bad Request` | Malformed body, invalid/unsupported password hash, invalid policy expression, or an invalid filter. |
+| `401 Unauthorized` | Missing, invalid, or expired credentials. |
+| `403 Forbidden` | Caller lacks the `admin` role for an administrative route. |
+| `404 Not Found` | The resource does not exist. For `GET /traces/{id}`, this also covers traces the caller is not authorized to see. |
+| `409 Conflict` | A concurrent configuration write changed the model version. The rejected write made no changes; reload and review/retry. |
+| `502 Bad Gateway` | ClickHouse is unreachable. Trace endpoints fail closed and return no rows. |
+| `503 Service Unavailable` | No fresh access model can be loaded. An expired model is not reused after a refresh failure. |
+
+## Fail-closed guarantees
+
+<Warning>
+  LightShip never returns partial results when authorization state is incomplete. All of the following cases return an empty result or an error, never unfiltered data:
+
+  - The access model is missing or invalid at boot.
+  - No policy applies to the caller.
+  - A referenced field has been removed or is unmarked.
+  - ClickHouse is unreachable or times out.
+</Warning>
+
+## Related
+
+- [Authentication](/get-started/authentication)
+- [Filters and operators](/api-reference/filters)
+- [Architecture](/concepts/architecture)

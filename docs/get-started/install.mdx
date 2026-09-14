@@ -1,0 +1,98 @@
+---
+title: "Install LightShip"
+sidebarTitle: "Install"
+description: "Run LightShip with Docker Compose or build the lightship binary from source."
+---
+
+LightShip runs as a single Go binary or container. Docker Compose is the fastest local evaluation
+path; hosted deployments can run the same container or binary alongside Postgres.
+
+## Install the `lightship` command
+
+Download the latest experimental archive and `SHA256SUMS` from
+[GitHub Releases](https://github.com/lightshipHQ/lightship/releases). Verify the checksum, unpack
+the archive for your platform, and place the `lightship` binary on your `PATH`.
+
+If you have Go 1.25 or newer, you can instead install directly from the module:
+
+```bash
+go install github.com/lightshipHQ/lightship/cmd/lightship@v0.1.0-alpha.1
+export PATH="$(go env GOPATH)/bin:$PATH"
+```
+
+Add the `export PATH=...` line to your shell profile if `lightship` is not found in a new terminal.
+The command is now available as `lightship`; continue to [MCP Clients](/use/mcp) to connect a coding
+agent.
+
+The release also publishes a multi-platform container image:
+
+```bash
+docker pull ghcr.io/lightshipHQ/lightship:v0.1.0-alpha.1
+```
+
+## Docker Compose
+
+The Compose stack runs LightShip and a Postgres instance for its own state (access model, users, keys, audit). It does not include ClickHouse: LightShip reads traces from a ClickHouse you already run.
+
+<Steps>
+  <Step title="Clone the repository">
+    Run these commands from a directory that does not already contain a file or directory named
+    `lightship`. Skip this step if you are already in a LightShip checkout.
+
+    ```bash
+    git clone https://github.com/lightshipHQ/lightship.git && cd lightship
+    ```
+  </Step>
+  <Step title="Configure the environment">
+    Copy the example file and set `CLICKHOUSE_DSN` to a read-only connection string for your trace database.
+
+    ```bash
+    cp .env.example .env
+    ```
+  </Step>
+  <Step title="Start the stack">
+    ```bash
+    docker compose up -d
+    docker compose logs control-plane
+    ```
+
+    The first-boot admin password is printed once to the control-plane log.
+  </Step>
+  <Step title="Open the web UI">
+    Visit [http://localhost:8080](http://localhost:8080) and sign in as `admin`.
+  </Step>
+</Steps>
+
+<Tip>
+  See the [Quickstart](/quickstart) for a walkthrough that ends with a bound trace source.
+</Tip>
+
+## Native binary
+
+Run `lightship serve` directly when you manage Postgres yourself. It applies Postgres migrations, initializes the admin account, loads the access model, and starts the HTTP server for REST, MCP, and the UI.
+
+Required environment:
+
+- `DATABASE_URL`: Postgres connection string.
+- `CLICKHOUSE_DSN`: read-only ClickHouse connection string.
+
+```bash
+DATABASE_URL=postgres://... \
+CLICKHOUSE_DSN=https://user:pass@instance.clickhouse.cloud:8443/db?secure=true \
+  lightship serve
+```
+
+For every command and environment requirement, see the [CLI reference](/operate/cli) and
+[Configuration](/operate/configuration).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authenticate" icon="key" href="/get-started/authentication">
+    Get a personal API key or sign in with the admin session.
+  </Card>
+
+  <Card title="Bind your trace source" icon="database" href="/configure/discover-trace-source">
+    Point LightShip at your ClickHouse trace table.
+  </Card>
+</CardGroup>

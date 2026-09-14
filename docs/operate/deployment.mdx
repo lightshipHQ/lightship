@@ -1,0 +1,44 @@
+---
+title: "Deployment"
+sidebarTitle: "Deployment"
+description: "Deploy LightShip securely as a containerized HTTP service backed by Postgres and a read-only ClickHouse connection."
+---
+
+LightShip runs as an HTTP service backed by Postgres for control-plane state and a read-only
+ClickHouse connection for traces. Docker Compose is the quickest evaluation path; the same
+container can run on a managed platform or container orchestrator.
+
+## Security boundary
+
+LightShip enforces policies and audit logging only for requests that pass through it. Direct
+ClickHouse access bypasses both controls.
+
+<Warning>
+  Do not give policy-restricted users direct ClickHouse access. Treat ClickHouse credentials as
+  infrastructure secrets and use LightShip as their trace-data access point.
+</Warning>
+
+## Production checklist
+
+Before running LightShip in production, verify the following:
+
+- Terminate TLS in front of LightShip, for example with a reverse proxy or load balancer.
+- Use a read-only ClickHouse account and keep both database connection strings in a secret manager.
+- Keep the admin password hash in a secret manager and inject it as `LIGHTSHIP_ADMIN_PASSWORD_HASH`.
+- Change the default `POSTGRES_PASSWORD` before the first boot.
+- Back up the Postgres volume regularly so user accounts, roles, and audit history are preserved.
+- Apply per-client login and request rate limits at the edge; built-in concurrency limits are
+  per process.
+- Monitor `GET /healthz` for service and Postgres availability. ClickHouse is deliberately excluded
+  from this health check, so alert on trace-query failures separately.
+- Keep `LIGHTSHIP_DEMO_MODE` disabled outside a dedicated synthetic-data demo.
+
+Review [Limitations](/operate/limitations) before exposing a deployment.
+
+## Multiple replicas
+
+You can run multiple LightShip replicas behind a load balancer for high availability. Be aware of how configuration and role data propagate:
+
+- **Policy changes** reach other replicas within `LIGHTSHIP_MODEL_TTL` (default `1m`). If an
+  expired cache cannot refresh, new model-dependent requests fail closed.
+- **Role assignments** are read from the database on every request, so they take effect immediately across all replicas.

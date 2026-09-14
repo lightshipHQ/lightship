@@ -1,0 +1,69 @@
+---
+title: "Policies"
+sidebarTitle: "Policies"
+description: "LightShip role policies are CEL expressions over marked trace fields and user attributes. Learn the supported operators, worked examples, and validation rules."
+---
+
+LightShip role policies are CEL expressions that reference marked trace fields and user attributes. Each role carries one policy; a user's effective access is the OR of every policy in their roles. LightShip compiles policies when they are stored and rejects invalid expressions, so a policy that reaches production has already type-checked against the current access model.
+
+## Expression building blocks
+
+Policies may reference:
+
+- **Marked fields.** Any column or map key marked as `policy`, with logical type `string`, `string_array`, or `boolean`. Number fields are filter-only and rejected in policies.
+- **User attributes.** Valid keys added to users, such as `tenant_id` and `user_id`, resolved from the caller and made policy-referenceable automatically.
+- **Literal values.** Strings, string lists, and booleans.
+
+Supported operators by logical type:
+
+| Type | Policy operators |
+| --- | --- |
+| `string` | `==`, `!=`, scalar `in` a list |
+| `string_array` | Exact element membership, for example `"agent:pii" in Tags` |
+| `boolean` | `==`, `!=` |
+
+## Worked examples
+
+The examples below assume scalar span attributes in `SpanAttributes`, array attributes in `SpanArrayAttributes`, and a promoted `ServiceName` column. Mark each referenced trace field as `policy`; user attributes become available when they are added to a user.
+
+| Access rule | Policy |
+| --- | --- |
+| User's tenant | `SpanAttributes["langfuse.trace.metadata.tenant.id"] == user.tenant_id` |
+| User's own activity | `SpanAttributes["user.id"] == user.user_id` |
+| Team's services | `ServiceName in ["booking-agent", "booking-worker"]` |
+| Team's GenAI agents | `SpanAttributes["gen_ai.agent.name"] in ["booking-agent", "support-agent"]` |
+| Team's GenAI workflows | `SpanAttributes["gen_ai.workflow.name"] in ["booking", "refunds"]` |
+| Approved model calls | `SpanAttributes["gen_ai.request.model"] in ["claude-opus-4-1", "gpt-5"]` |
+| Provider-scoped access | `SpanAttributes["gen_ai.provider.name"] == "aws.bedrock"` |
+| Non-production engineers | `SpanAttributes["langfuse.trace.metadata.environment"] in ["development", "staging"]` |
+| Standard traces | `SpanAttributes["langfuse.trace.metadata.classification"] == "standard"` |
+| Additional reviewer access | `SpanAttributes["langfuse.trace.metadata.classification"] == "restricted"` |
+| Agents handling PII | `"agent:pii" in SpanArrayAttributes["langfuse.trace.tags"]` |
+
+The `gen_ai.*` names follow the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/).
+
+## String array semantics
+
+String array membership is exact: `"agent:pii"` does not match `"agent:pii-reviewed"`. Mark array-typed fields with `logical_type: string_array` before referencing them in a policy.
+
+<Warning>
+  Missing keys and malformed serialized arrays do not satisfy a policy expression, including under negation. This prevents accidental exposure through unset attributes.
+</Warning>
+
+## What LightShip does not do
+
+- **No content classification or redaction.** LightShip does not classify or redact data itself.
+- **No span hiding.** LightShip does not hide individual spans inside an authorized trace; a matching span makes the complete trace visible.
+- **No number policies.** Number fields are filter-only. The policy profile deliberately rejects them.
+
+## Related topics
+
+<CardGroup cols={2}>
+  <Card title="Roles and policies" icon="users" href="/configure/roles-and-policies">
+    Create, replace, and delete roles through the API or Setup UI.
+  </Card>
+
+  <Card title="Filters" icon="filter" href="/api-reference/filters">
+    Compare policy expressions to their JSON filter equivalents.
+  </Card>
+</CardGroup>

@@ -1,0 +1,51 @@
+---
+title: "Define Roles"
+sidebarTitle: "Define Roles"
+description: "Review existing access and build roles from trace fields, operators, and user attributes."
+---
+
+Open **Setup → Define roles** to review who can see which traces. Existing roles are read-only until
+you select **Edit**. Each card shows a plain-English rule followed by its stored configuration.
+
+## Create a role
+
+Select **+ New role**, name the role, and add one or more conditions. Each condition has:
+
+- A trace field enabled for **Access rules**
+- An operator supported by that field's type
+- A custom value, boolean, or user attribute such as `user.tenant_id`
+
+Choose whether all conditions or any condition must match, then save the role. Invalid rules are
+rejected without changing the current configuration.
+
+<Info>
+  Attribute names become available as policy values automatically when they are added to a user.
+</Info>
+
+## How access combines
+
+A user can hold more than one role. Their visible traces are the union of everything those roles
+allow. A role can also contain multiple stored policies; any matching policy grants the trace.
+
+The built-in `admin` role always sees every trace and cannot be edited.
+
+## Advanced policies
+
+The visual builder safely edits the common policy patterns. For expressions it cannot represent,
+the role remains read-only in Setup. Use the policy guide and Roles API for those changes.
+
+## Related topics
+
+<CardGroup cols={2}>
+  <Card title="Users" icon="users" href="/configure/users">
+    Assign roles and attributes to accounts.
+  </Card>
+
+  <Card title="Policy language" icon="scale-balanced" href="/concepts/policies">
+    See supported expressions and examples.
+  </Card>
+
+  <Card title="Roles API" icon="code" href="/api-reference/access/roles">
+    Create, replace, and delete roles over REST.
+  </Card>
+</CardGroup>

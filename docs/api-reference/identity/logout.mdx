@@ -1,0 +1,25 @@
+---
+title: "POST /logout"
+sidebarTitle: "Logout"
+description: "Delete the current browser session in LightShip. The next request without a valid session cookie or Bearer key is rejected."
+---
+
+`POST /logout` deletes the current browser session. After this call the session cookie is no longer valid, and the caller must sign in again to reach any authenticated route.
+
+## Endpoint
+
+```text
+POST http://localhost:8080/logout
+```
+
+Authentication: session cookie.
+
+## Example
+
+```bash
+curl -X POST http://localhost:8080/logout -b cookies.txt
+```
+
+<Info>
+  Logout does not revoke API keys. Manage keys through the [API Keys](/api-reference/identity/keys) endpoints.
+</Info>

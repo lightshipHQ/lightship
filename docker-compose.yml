@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lightship
+      # The default guards a metadata database on the compose-internal network, not the traces —
+      # those sit behind CLICKHOUSE_DSN, which has no default. Change it in .env before deploying.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lightship}
+      POSTGRES_DB: lightship
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lightship"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  control-plane:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://lightship:${POSTGRES_PASSWORD:-lightship}@postgres:5432/lightship?sslmode=disable
+      # Optional. Generate with `lightship hash` to manage the credential yourself; leave unset and
+      # first boot generates one and prints it to this container's log, once. The bootstrap admin
+      # holds the `true` policy, so this is the one credential that never passes through the API.
+      LIGHTSHIP_ADMIN_PASSWORD_HASH: ${LIGHTSHIP_ADMIN_PASSWORD_HASH:-}
+      # Read-only trace credentials. The one thing the product cannot invent is your data, so this
+      # is the one variable with no default.
+      CLICKHOUSE_DSN: ${CLICKHOUSE_DSN:?set CLICKHOUSE_DSN in .env — see .env.example}
+      # How long a replica may serve a cached access model. This is the window in which a policy
+      # change reaches every replica; role assignments are read per request and are immediate.
+      LIGHTSHIP_MODEL_TTL: ${LIGHTSHIP_MODEL_TTL:-1m}
+      # Days of audit log to keep; pruned in-process, no cron.
+      LIGHTSHIP_AUDIT_RETENTION_DAYS: ${LIGHTSHIP_AUDIT_RETENTION_DAYS:-90}
+      # Listen address inside the container. The port mapping below assumes 8080.
+      LIGHTSHIP_ADDR: ${LIGHTSHIP_ADDR:-:8080}
+    ports:
+      - "8080:8080"
+    # No config file. The access model is discovered from ClickHouse and set through the API — see
+    # "Setup" in README.md.
+
+volumes:
+  pgdata:

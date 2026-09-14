@@ -1,0 +1,36 @@
+---
+title: "POST /login"
+sidebarTitle: "Login"
+description: "Authenticate a browser user with username and password. Returns a session cookie used on subsequent requests until logout or password change."
+---
+
+`POST /login` signs a user into the LightShip web UI and starts a browser session. The response sets a session cookie; the caller then sends that cookie on every subsequent request. Automation clients typically use API keys with `Authorization: Bearer` instead.
+
+## Endpoint
+
+```text
+POST http://localhost:8080/login
+```
+
+## Request body
+
+<ParamField body="username" type="string" required>
+  The LightShip username.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+## Example
+
+```bash
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"username": "alice", "password": "..."}'
+```
+
+<Info>
+  If the user's `must_change_password` flag is true, only `GET /me`, `POST /me/password`, and `POST /logout` are available until the password is changed.
+</Info>

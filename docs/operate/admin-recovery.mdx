@@ -1,0 +1,60 @@
+---
+title: "Admin Recovery"
+sidebarTitle: "Admin Recovery"
+description: "Recover the LightShip admin account if the generated password is lost. Generate a new hash with the CLI and rotate it safely without losing data."
+---
+
+The bootstrap username is always `admin`. If `LIGHTSHIP_ADMIN_PASSWORD_HASH` is unset on first
+boot, LightShip generates a random password and prints it once to the service logs. Run the Docker
+Compose commands below from the LightShip checkout root.
+
+On a hosted platform, use the same sequence through the platform controls: read the service logs,
+set `LIGHTSHIP_ADMIN_PASSWORD_HASH` in its secret manager, restart the service, and open its
+deployment URL instead of `http://localhost:8080`.
+
+## Find the generated password
+
+If the container is still running and logs are available, read the password from the Compose logs:
+
+<Steps>
+  <Step title="Read the logs">
+    ```sh
+    docker compose logs control-plane
+    ```
+
+    Look for the generated password printed near the top of the first-boot output.
+  </Step>
+  <Step title="Sign in">
+    Open [http://localhost:8080](http://localhost:8080) and sign in as `admin` using the password from the logs.
+  </Step>
+</Steps>
+
+<Warning>
+  Only the password hash is stored in the database. The log line is not reprinted on restart. If the log has been lost or truncated, follow the reset steps below.
+</Warning>
+
+## Reset the admin password
+
+If the generated password is lost, generate a new hash with the CLI and restart the container:
+
+<Steps>
+  <Step title="Generate a new hash">
+    ```sh
+    docker compose run --rm control-plane hash
+    ```
+
+    Enter a new password when prompted. The command prints the Argon2id hash.
+  </Step>
+  <Step title="Update the environment">
+    Set `LIGHTSHIP_ADMIN_PASSWORD_HASH` to the generated hash. For Docker Compose, add it to your
+    `.env` file. For a hosted deployment, store it in the platform's secret manager.
+  </Step>
+  <Step title="Recreate the container">
+    ```sh
+    docker compose up -d --force-recreate control-plane
+    ```
+
+    A new environment-managed hash takes precedence and revokes existing admin sessions. Reusing
+    the same value on later boots does not overwrite a password subsequently chosen in the UI.
+  </Step>
+</Steps>
