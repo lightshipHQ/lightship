@@ -9,7 +9,7 @@ access rules, creates a tenant-scoped role, assigns it to a user, and verifies t
 
 ## Before you begin
 
-- Open the [hosted demo](https://demo.lightship.sh/) to follow this example.
+- Prepare a LightShip deployment with a trace table containing multiple tenants.
 - Sign in to LightShip as an administrator.
 - Use a ClickHouse account with read-only access to the trace source.
 - Identify the column or attribute that separates tenants. This guide uses `TenantId`.
@@ -213,7 +213,7 @@ curl https://your-lightship.example/schema/optimizations \
   -H "Authorization: Bearer $LIGHTSHIP_API_KEY"
 ```
 
-For the hosted demo, the report found:
+For the example dataset, the report found:
 
 - `TenantId` is already the first field in the sorting key, so tenant comparisons are range scans.
 - `AgentName` is not covered by the sorting key or a skip index, so LightShip recommends a

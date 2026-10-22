@@ -14,7 +14,6 @@ silo.
 
 [Documentation](https://lightship.mintlify.site) ·
 [Website](https://lightship.sh/) ·
-[Try the hosted demo](https://demo.lightship.sh/) ·
 [Contribute](CONTRIBUTING.md)
 
 ## Why LightShip
@@ -28,26 +27,6 @@ silo.
   governs the web UI, REST API, and MCP.
 - **Keep large investigations out of model context.** The local MCP companion writes authorized
   exports into the agent workspace and returns only paths and counts to the conversation.
-
-## Try the hosted demo
-
-Open the [hosted demo](https://demo.lightship.sh/). Its sign-in page provides the
-credentials for a disposable administrator account. The dataset contains 132 recorded synthetic
-support-agent conversations across two fictional retailers.
-
-In the web UI you can:
-
-- inspect traces, conversations, and tool results;
-- preview the tenant-scoped access available to each account team;
-- review searchable and policy-accessible fields; and
-- create a short-lived API key to investigate the same data through MCP.
-
-Follow the [tenant-scoped access guide](https://lightship.mintlify.site/guides/tenant-scoped-trace-access)
-to explore the access-control setup and verify its boundary. To investigate the traces
-conversationally, follow the [MCP connection guide](https://lightship.mintlify.site/use/mcp), then
-use the tested prompt sequence in the tenant-scoped access guide.
-
-The deployment is an intentionally editable sandbox. Do not enter real or sensitive data.
 
 ## How it works
 
