@@ -8,19 +8,5 @@
     "url": "https://github.com/lightshipHQ/lightship",
     "source": "github"
   },
-  "websiteUrl": "https://lightship.sh/",
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://demo.lightship.sh/mcp",
-      "headers": [
-        {
-          "name": "Authorization",
-          "description": "Bearer API key created in LightShip",
-          "isRequired": true,
-          "isSecret": true
-        }
-      ]
-    }
-  ]
+  "websiteUrl": "https://lightship.sh/"
 }
