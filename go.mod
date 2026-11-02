@@ -3,7 +3,7 @@ module github.com/lightshipHQ/lightship
 go 1.25.0
 
 require (
-	cel.dev/cel-go v0.32.0
+	cel.dev/cel-go v0.33.1
 	github.com/ClickHouse/clickhouse-go/v2 v2.48.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
